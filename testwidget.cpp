@@ -13,56 +13,48 @@ GNU General Public License for more details.
 */
 #include "testwidget.h"
 
-testWidget::testWidget(QWidget* parent):QWidget(parent)
+testWidget::testWidget(QWidget* parent)
+    : QWidget(parent)
 {
-	map = new myDerivedMap(this);
+    map = new myDerivedMap(this);
 
-	
+    vlayout = new QVBoxLayout(this);
+    combo = new QComboBox(this);
+    populateCombo();
+    vlayout->addWidget(combo);
 
-	vlayout = new QVBoxLayout(this);
-	combo = new QComboBox(this);
-	populateCombo();
-	vlayout->addWidget(combo);
+    connect(combo, SIGNAL(currentIndexChanged(int)),this, SLOT(setServer(int)));
 
-	
-	connect(combo, SIGNAL(currentIndexChanged(int)),this, SLOT(setServer(int)));
+    vlayout->addWidget(map);
 
-	vlayout->addWidget(map);
+    setLayout(vlayout);
 
-
-	setLayout(vlayout);
-
-	QSize size(384,384);
-	resize(size);
+    QSize size(1280, 720);
+    resize(size);
 }
 
 void testWidget::populateCombo()
 {
+    QStringList l = map->getServerNames();
 
-	QStringList l = map->getServerNames();
-
-	for (int i=0; i<l.size(); i++)
-	{
-		combo->addItem(l.at(i),QVariant(i));
-	}
+    for (int i=0; i<l.size(); i++)
+    {
+        combo->addItem(l.at(i),QVariant(i));
+    }
 }
 
 void testWidget::paintEvent(QPaintEvent*)
 {
-	QPainter painter(this);
+    QPainter painter(this);
 }
 
 testWidget::~testWidget()
 {
-	delete map;
-	delete vlayout;
+    delete map;
+    delete vlayout;
 }
-
-
 
 void testWidget::setServer(int index)
 {
-	map->setServer(index);
+    map->setServer(index);
 }
-
-

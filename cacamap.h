@@ -20,6 +20,7 @@ GNU General Public License for more details.
 #ifndef CACAMAP_H
 #define CACAMAP_H
 #include <QtGui>
+#include <QtWidgets/QWidget>
 #include <QtNetwork>
 #include <iostream>
 #include <vector>
@@ -31,10 +32,13 @@ GNU General Public License for more details.
 
 struct longPoint
 {
-	quint32 x;/**< x coord. */
-	quint32 y;/**< y coord.*/
-	longPoint(quint32,quint32);
-	longPoint();
+    quint32 x = 0; /**< x coord. */
+    quint32 y = 0; /**< y coord.*/
+    longPoint(quint32 x_, quint32 y_) noexcept
+        : x(x_), y(y_)
+    {
+    }
+    longPoint() = default;
 };
 
 /**
@@ -45,6 +49,7 @@ struct myMercator
 	static longPoint geoCoordToPixel(QPointF const &,int , int);
 	static QPointF pixelToGeoCoord(longPoint const &, int, int);
 };
+
 /**
 * Struct to define a range of consecutive tiles
 * It's used to identify which tiles are visible and need to be rendered/downlaoded
@@ -52,13 +57,13 @@ struct myMercator
 */
 struct tileSet
 {
-	int zoom;/**< zoom level.*/
-	qint32 top;/**< topmost row.*/
-	qint32 bottom;/**< bottommost row.*/
-	qint32 left;/**< leftmostcolumn. */
-	qint32 right;/**< rightmost column. */
-	int offsetx;/**< horizontal offset needed to align the tiles in the wiget.*/
-	int offsety;/**< vertical offset needed to align the tiles in the widget.*/
+    int zoom = 0;         /**< zoom level.*/
+    qint32 top = 0;       /**< topmost row.*/
+    qint32 bottom = 0;    /**< bottommost row.*/
+    qint32 left = 0;      /**< leftmostcolumn. */
+    qint32 right = 0;     /**< rightmost column. */
+    int offsetx = 0;      /**< horizontal offset needed to align the tiles in the wiget.*/
+    int offsety = 0;      /**< vertical offset needed to align the tiles in the widget.*/
 };
 
 /**
@@ -67,11 +72,12 @@ struct tileSet
 */
 struct tile
 {
-	int zoom;/**< zoom level.*/
-	qint32 x;/**< colum number.*/
-	qint32 y;/**< row number.*/
-	QString  url;/**<used to identify the %tile when it finishes downloading.*/
+    int zoom = 0;    /**< zoom level.*/
+    qint32 x = 0;    /**< colum number.*/
+    qint32 y = 0;    /**< row number.*/
+    QString url;     /**< used to identify the %tile when it finishes downloading.*/
 };
+
 /**
 * maximum space allowed for caching tiles
 */
@@ -79,17 +85,14 @@ struct tile
 /**
 Main map widget
 */
-
-
 class cacaMap : public QWidget
 {
-
 Q_OBJECT
 
 public:	
 	cacaMap(QWidget * _parent=0);
-
 	virtual ~cacaMap();
+
 	void setGeoCoords(QPointF);
 	bool zoomIn();
 	bool zoomOut();
@@ -100,14 +103,14 @@ public:
 	int getZoom();
 
 private:
-	QNetworkAccessManager *manager;/**< manages http requests. */
-	tileSet tilesToRender;/**< range of visible tiles. */
-	QHash<QString,int> tileCache;/**< list of cached tiles (in HDD). */
-	QHash<QString,tile> downloadQueue;/**< list of tiles waiting to be downloaded. */
-	QHash<QString,int> unavailableTiles;/**< list of tiles that were not found on the server.*/
-	bool downloading;/**< flag that indicates if there is a download going on. */
-	QString folder;/**< root application folder. */
-	QMovie loadingAnim;/**< to show a 'loading' animation for yet unavailable tiles. */
+    QNetworkAccessManager *manager; /**< manages http requests. */
+    tileSet tilesToRender;          /**< range of visible tiles. */
+    QHash<QString,int> tileCache;   /**< list of cached tiles (in HDD). */
+    QHash<QString,tile> downloadQueue; /**< list of tiles waiting to be downloaded. */
+    QHash<QString,int> unavailableTiles; /**< list of tiles that were not found on the server.*/
+    bool downloading = false;       /**< flag that indicates if there is a download going on. */
+    QString folder;                 /**< root application folder. */
+    QMovie loadingAnim;             /**< to show a 'loading' animation for yet unavailable tiles. */
 	QPixmap notAvailableTile;
 	servermanager servermgr;	
 
@@ -118,17 +121,19 @@ private:
 	QPixmap getTilePatch(int,quint32,quint32,int,int,int);
 
 protected:
-	int zoom;/**< Map zoom level. */
-	int minZoom;/**< Minimum zoom level (farthest away).*/
-	int maxZoom;/**< Maximum zoom level (closest).*/
+    int zoom = 16;    /**< Map zoom level. */
+    int minZoom = 0;  /**< Minimum zoom level (farthest away).*/
+    int maxZoom = 20; /**< Maximum zoom level (closest).*/
 
-	int tileSize; /**< size in px of the square %tile. */
-	quint32 cacheSize;/**< current %tile cache size in bytes. */
-	//check QtMobility QGeoCoordinate
-	QPointF geocoords; /**< current longitude and latitude. */
+    QString cacheDir = "cache";
+
+    int tileSize = 256;                /**< size in px of the square %tile. */
+    quint32 cacheSize = 0;             /**< current %tile cache size in bytes. */
+    // check QtMobility QGeoCoordinate
+    QPointF geocoords = QPointF(-123.140499, 49.313331); /**< current longitude and latitude. */
 	QPixmap* imgBuffer;
 	QPixmap tmpbuff;
-	float buffzoomrate;
+    float buffzoomrate = 1.0;
 
 	bool bufferDirty; /**< image buffer needs to be updated. */	
 	void resizeEvent(QResizeEvent*);

@@ -1,12 +1,10 @@
 #include "myderivedmap.h"
-using namespace std;
 
-myDerivedMap::myDerivedMap(QWidget* parent):cacaMap(parent)
+myDerivedMap::myDerivedMap(QWidget* parent)
+    : cacaMap(parent)
 {
-	cout<<"derived constructor"<<endl;
+    std::cout << "derived constructor" << std::endl;
 	timer = new QTimer(this);
-	mindistance = 0.025;
-	animrate = 0.5;	
 	
 	hlayout = new QHBoxLayout;
 
@@ -19,8 +17,7 @@ myDerivedMap::myDerivedMap(QWidget* parent):cacaMap(parent)
 	
 	hlayout->addWidget(slider);
 	hlayout->addStretch();
-	setLayout(hlayout);
-
+    setLayout(hlayout);
 }
 
 myDerivedMap::~myDerivedMap()
@@ -101,11 +98,13 @@ void myDerivedMap::zoomAnim()
 	}
 	update();
 }
+
 void myDerivedMap::updateZoom(int newZoom)
 {
 	setZoom(newZoom);
 	update();
 }
+
 void myDerivedMap::paintEvent(QPaintEvent *e)
 {
 	cacaMap::paintEvent(e);

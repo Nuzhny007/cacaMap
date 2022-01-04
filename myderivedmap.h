@@ -1,5 +1,8 @@
 #ifndef DERIVEDMAP_H
 #define DERIVEDMAP_H
+
+#include <QtWidgets/QLayout>
+#include <QtWidgets/QSlider>
 #include "cacamap.h"
 
 class myDerivedMap: public cacaMap
@@ -21,8 +24,8 @@ private:
 	
 	QSlider * slider;
 	QPointF destination; /**< used for dblclick+zoom animations */
-	float mindistance;/**< used to identify the end of the animation*/
-	float animrate; 
+    float mindistance = 0.025;/**< used to identify the end of the animation*/
+    float animrate = 0.5;
 protected slots:
 	void zoomAnim();
 	void updateZoom(int);

@@ -16,12 +16,9 @@ GNU General Public License for more details.
 #define TESTWIDGET_H
 
 #include <QtGui>
+#include <QtWidgets/QComboBox>
 #include "myderivedmap.h"
 #include <iostream>
-
-using namespace std;
-
-
 
 class testWidget: public QWidget
 {

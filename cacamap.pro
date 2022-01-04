@@ -6,7 +6,7 @@ TEMPLATE = app
 CONFIG += qt debug	
 DEPENDPATH += .
 INCLUDEPATH += .
-QT+=network xml
+QT+=widgets network xml
 # Input
 HEADERS += cacamap.h myderivedmap.h testwidget.h servermanager.h
 SOURCES += cacamap.cpp main.cpp myderivedmap.cpp testwidget.cpp servermanager.cpp

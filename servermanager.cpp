@@ -14,7 +14,6 @@ GNU General Public License for more details.
 */
 #include "servermanager.h"
 #include <iostream>
-using namespace std;
 
 /**
 * loads info from xml file
@@ -22,91 +21,92 @@ using namespace std;
 */
 bool servermanager::loadConfigFile(QString xmlfile)
 {
-  QDomDocument doc("mydocument");
-  QFile file(xmlfile);
+    QDomDocument doc("mydocument");
+    QFile file(xmlfile);
 
-  if (!file.open(QIODevice::ReadOnly))
-  {
-        std::cout<<"couldn't open file"<<std::endl;
-	return false;
-  }
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        std::cout << "couldn't open file: " << xmlfile.toStdString() << std::endl;
+        return false;
+    }
 
-  if (!doc.setContent(&file)) 
-  {
-  	file.close();
-	cout<<"couldn't set content"<<endl;
-	return false;
-  }
+    if (!doc.setContent(&file))
+    {
+        file.close();
+        std::cout << "couldn't set content: " << xmlfile.toStdString() << std::endl;
+        return false;
+    }
 
-  QDomNodeList servers = doc.elementsByTagName("server");
-  if(!servers.length())
-  {
-  	cout<<"no servers defined in xml file"<<endl;
-	return false;
-  }
-  for (quint32 i=0; i< servers.length(); i++)
-  {
-  	QDomNode server = servers.item(i);
-	QDomNode namenode = server.namedItem("name");
-	if (namenode.isNull())
-	{
-		cout<<"server has no name tag in xml file"<<endl;
-		return 0;
-	}
+    QDomNodeList servers = doc.elementsByTagName("server");
+    if(!servers.length())
+    {
+        std::cout << "no servers defined in xml file: " << xmlfile.toStdString() << std::endl;
+        return false;
+    }
+    for (quint32 i = 0; i < servers.length(); ++i)
+    {
+        QDomNode server = servers.item(i);
+        QDomNode namenode = server.namedItem("name");
+        if (namenode.isNull())
+        {
+            std::cout << "server has no name tag in xml file" << std::endl;
+            return 0;
+        }
 
-	QDomCharacterData nametext = namenode.firstChild().toCharacterData();
-	if (nametext.isNull())
-	{
-		cout<<"server name is empty in xml"<<endl;
-		return 0;
-	}
-	serverNames.append(nametext.data());
-	
-	QDomNode urlnode = server.namedItem("url");
-	QDomCDATASection urltext = urlnode.firstChild().toCDATASection();
-	if (urltext.isNull())
-	{
-		cout<<"url format is empty in xml"<<endl;
-		return 0;
-	}
-	
-	QDomNode foldernode = server.namedItem("folder");
-	QDomCharacterData foldertext = foldernode.firstChild().toCharacterData();
-	if (foldertext.isNull())
-	{
-		cout<<"folder format is empty in xml"<<endl;
-		return 0;
-	}
+        QDomCharacterData nametext = namenode.firstChild().toCharacterData();
+        if (nametext.isNull())
+        {
+            std::cout << "server name is empty in xml" << std::endl;
+            return 0;
+        }
+        serverNames.append(nametext.data());
 
-	QDomNode filepathnode = server.namedItem("filepath");
-	QDomCDATASection filepathtext = filepathnode.firstChild().toCDATASection();
-	if (filepathtext.isNull())
-	{
-		cout<<"filepath is empty in xml"<<endl;
-		return 0;
-	}
-	
-	QDomNode tilenode = server.namedItem("tile");
-	QDomCDATASection tiletext = tilenode.firstChild().toCDATASection();
-	if (tiletext.isNull())
-	{
-		cout<<"tile format is empty in xml"<<endl;
-		return 0;
-	}
+        QDomNode urlnode = server.namedItem("url");
+        QDomCDATASection urltext = urlnode.firstChild().toCDATASection();
+        if (urltext.isNull())
+        {
+            std::cout << "url format is empty in xml" << std::endl;
+            return 0;
+        }
 
-	tileserver serveritem;
-	serveritem.name = nametext.data();
-	serveritem.url = urltext.data();
-	serveritem.folder = foldertext.data();
-	serveritem.path = filepathtext.data();
-	serveritem.tile = tiletext.data();
+        QDomNode foldernode = server.namedItem("folder");
+        QDomCharacterData foldertext = foldernode.firstChild().toCharacterData();
+        if (foldertext.isNull())
+        {
+            std::cout << "folder format is empty in xml" << std::endl;
+            return 0;
+        }
 
-	serverlist.append(serveritem);
-  }
-  selectedServer = 0;
-  file.close();
-  return true;
+        QDomNode filepathnode = server.namedItem("filepath");
+        QDomCDATASection filepathtext = filepathnode.firstChild().toCDATASection();
+        if (filepathtext.isNull())
+        {
+            std::cout << "filepath is empty in xml" << std::endl;
+            return 0;
+        }
+
+        QDomNode tilenode = server.namedItem("tile");
+        QDomCDATASection tiletext = tilenode.firstChild().toCDATASection();
+        if (tiletext.isNull())
+        {
+            std::cout << "tile format is empty in xml" << std::endl;
+            return 0;
+        }
+
+        tileserver serveritem;
+        serveritem.name = nametext.data();
+        serveritem.url = urltext.data();
+        serveritem.folder = foldertext.data();
+        serveritem.path = filepathtext.data();
+        serveritem.tile = tiletext.data();
+
+        serverlist.append(serveritem);
+    }
+    selectedServer = 0;
+    file.close();
+    return true;
 }
+
 /**
 * Get URL of a specific %tile
 * @param zoom zoom level
@@ -114,16 +114,16 @@ bool servermanager::loadConfigFile(QString xmlfile)
 */
 QString servermanager::getTileUrl(int zoom, quint32 x, quint32 y)
 {
-	QString sz,sx,sy;
-	sz.setNum(zoom);
-	sx.setNum(x);
-	sy.setNum(y);
-	QString urltmpl = serverlist.at(selectedServer).url;
+    QString sz, sx, sy;
+    sz.setNum(zoom);
+    sx.setNum(x);
+    sy.setNum(y);
+    QString urltmpl = serverlist.at(selectedServer).url;
 
-	urltmpl.replace(QString("%z"),sz);
-	urltmpl.replace(QString("%x"),sx);
-	urltmpl.replace(QString("%y"),sy);
-	return urltmpl;
+    urltmpl.replace(QString("%z"),sz);
+    urltmpl.replace(QString("%x"),sx);
+    urltmpl.replace(QString("%y"),sy);
+    return urltmpl;
 }
 
 /**
@@ -131,7 +131,7 @@ QString servermanager::getTileUrl(int zoom, quint32 x, quint32 y)
 */
 QString servermanager::tileCacheFolder()
 {
-	return  serverlist.at(selectedServer).folder;
+    return  serverlist.at(selectedServer).folder;
 }
 
 /**
@@ -139,11 +139,11 @@ QString servermanager::tileCacheFolder()
 */
 QString servermanager::fileName(quint32 y)
 {
-	QString filetmpl = serverlist.at(selectedServer).tile;
-	QString sy;
-	sy.setNum(y);
-	filetmpl.replace("%y",sy);
-	return filetmpl;
+    QString filetmpl = serverlist.at(selectedServer).tile;
+    QString sy;
+    sy.setNum(y);
+    filetmpl.replace("%y",sy);
+    return filetmpl;
 }
 
 /**
@@ -151,13 +151,13 @@ QString servermanager::fileName(quint32 y)
 */
 QString servermanager::filePath(int zoom, quint32 x)
 {
-	QString filetmpl = serverlist.at(selectedServer).path;
-	QString sz, sx;
-	sz.setNum(zoom);
-	sx.setNum(x);
-	filetmpl.replace("%z",sz);
-	filetmpl.replace("%x",sx);
-	return filetmpl;
+    QString filetmpl = serverlist.at(selectedServer).path;
+    QString sz, sx;
+    sz.setNum(zoom);
+    sx.setNum(x);
+    filetmpl.replace("%z",sz);
+    filetmpl.replace("%x",sx);
+    return filetmpl;
 }
 
 
@@ -166,7 +166,7 @@ QString servermanager::filePath(int zoom, quint32 x)
 */
 QString servermanager::serverName()
 {
-	return serverlist.at(selectedServer).name;
+    return serverlist.at(selectedServer).name;
 }
 /**
 * selects server at index
@@ -174,10 +174,8 @@ QString servermanager::serverName()
 
 void servermanager::selectServer(int index)
 {
-	if (index >=0 && index < serverlist.size())
-	{
-		selectedServer = index;
-	}
+    if (index >=0 && index < serverlist.size())
+        selectedServer = index;
 }
 
 /**
@@ -186,5 +184,5 @@ void servermanager::selectServer(int index)
 
 QStringList servermanager::getServerNames()
 {	
-	return serverNames;
+    return serverNames;
 }

@@ -15,25 +15,6 @@ GNU General Public License for more details.
 
 #include "cacamap.h"
 
-using namespace std;
-/**
-* constructor
-*/
-longPoint::longPoint(quint32 _x, quint32 _y)
-{
-	x = _x;
-	y = _y;
-}
-/**
-*empty constructor
-*/
-
-longPoint::longPoint()
-{
-	x = 0;
-	y = 0;
-}
-
 /**
 * Converts a geo coordinate to map pixels
 * @param geocoord has the longitude and latitude in degrees.
@@ -56,8 +37,9 @@ longPoint myMercator::geoCoordToPixel(QPointF const &geocoord, int zoom, int til
 	
 	quint32 y = mapsize*(180.0 - latitude_m)/360.0;
 	
-	return longPoint(x,y);
+    return longPoint(x,y);
 }
+
 /**
 * Converts  map pixels to geo coordinates in degrees
 * @param pixelcoord has the x and y px coordinates.
@@ -66,49 +48,43 @@ longPoint myMercator::geoCoordToPixel(QPointF const &geocoord, int zoom, int til
 * @return a QPointF object containing the latitude and longitude of 
 * of the given location.
 */
-
 QPointF myMercator::pixelToGeoCoord(longPoint const &pixelcoord, int zoom, int tilesize)
 {
-	long  x= pixelcoord.x;
-	long  y= pixelcoord.y;
+    long x = pixelcoord.x;
+    long y = pixelcoord.y;
 	
 	//height, width of the whole map,this is, all tiles for a given zoom level put together
 	quint32 mapsize =  (1<<zoom)*tilesize;
-
 	
-	qreal longitude = x*360.0/mapsize - 180.0;
-	
+	qreal longitude = x*360.0/mapsize - 180.0;	
 	qreal latitude_m = 180.0 - y*360.0/mapsize;
 	qreal latitude = asin(tanh(latitude_m*M_PI/180.0))*180/M_PI;
 	
 	return QPointF(longitude,latitude);
 }
+
 /**
 * constructor
 */
-cacaMap::cacaMap(QWidget* parent):QWidget(parent)
+cacaMap::cacaMap(QWidget* parent)
+    : QWidget(parent)
 {
-	cout<<"cacamap constructor"<<endl;
-	if (!servermgr.loadConfigFile("tileservers.xml"))
-	{
-		std::cout<<"error loading server file."<<std::endl;
-	}
-	cacheSize = 0;
-	maxZoom = 18;
-	minZoom = 0;
-	folder = QDir::currentPath();
-	loadCache();
-	geocoords = QPointF(23.8564,61.4667);
-	downloading = false;
-	tileSize = 256;
-	zoom = 14;
-	manager = new QNetworkAccessManager(this);
-	loadingAnim.setFileName("loading.gif");
-	loadingAnim.setScaledSize(QSize(tileSize,tileSize));
-	loadingAnim.start();
-	notAvailableTile.load("notavailable.jpeg");
-	imgBuffer = new QPixmap(size());
-	buffzoomrate = 1.0;
+    std::cout << "cacamap constructor" << std::endl;
+
+    folder = QDir::currentPath();
+    std::cout << "Current folder: " << folder.toStdString() << std::endl;
+
+    QString serversFile = "tileservers.xml";
+    if (!servermgr.loadConfigFile(serversFile))
+        std::cout << "error loading server file: " << serversFile.toStdString() << std::endl;
+
+    loadCache();
+    manager = new QNetworkAccessManager(this);
+    loadingAnim.setFileName("loading.gif");
+    loadingAnim.setScaledSize(QSize(tileSize,tileSize));
+    loadingAnim.start();
+    notAvailableTile.load("notavailable.jpeg");
+    imgBuffer = new QPixmap(size());
 }
 
 /**
@@ -117,8 +93,6 @@ Sets the latitude and longitude to the coords in newcoords
 */
 void cacaMap::setGeoCoords(QPointF newcoords)
 {
-	//geocoords.setX(newcoords.x());
-	//geocoords.setY(newcoords.y());
 	geocoords = newcoords;
 }
 /**
@@ -225,18 +199,15 @@ QPixmap cacaMap::getTilePatch(int zoom, quint32 x, quint32 y, int offx, int offy
 	//dont use patches smaller than 16 px. They are unintelligible anyways.
 	if (zoom>0 && tsize>=16*2)
 	{
-		int parentx, parenty, offsetx, offsety;
-		QString tileid;
-		QPixmap patch;
-		QString sz,sx,sy;
-		parentx = x/2;
-		parenty = y/2;
+        QString sz, sx, sy;
+        int parentx = x/2;
+        int parenty = y/2;
 		sz.setNum(zoom-1);
 		sx.setNum(parentx);
 		sy.setNum(parenty);
-		offsetx = offx/2 + (x%2)*tileSize/2;
-		offsety = offy/2 + (y%2)*tileSize/2;
-		tileid = sz+"."+sx+"."+sy;
+        int offsetx = offx/2 + (x%2)*tileSize/2;
+        int offsety = offy/2 + (y%2)*tileSize/2;
+        QString tileid = sz+"."+sx+"."+sy;
 		if (tileCache.contains(tileid))
 		{
 			//render the tile
@@ -247,13 +218,14 @@ QPixmap cacaMap::getTilePatch(int zoom, quint32 x, quint32 y, int offx, int offy
 			QFile f(fileName);
 			if (f.open(QIODevice::ReadOnly))
 			{
+                QPixmap patch;
 				patch.loadFromData(f.readAll());
 				f.close();
 				return patch.copy(offsetx,offsety,tsize/2,tsize/2).scaledToHeight(tileSize);
 			}
 			else
 			{
-				cout<<"no file found "<<path.toStdString()<<fileName.toStdString()<<endl;
+                std::cout << "no file found: " << path.toStdString() << fileName.toStdString() << std::endl;
 			}
 		}
 		else
@@ -263,8 +235,6 @@ QPixmap cacaMap::getTilePatch(int zoom, quint32 x, quint32 y, int offx, int offy
 	}
 	return loadingAnim.currentPixmap();
 }
-
-
 
 /**
 Starts downloading the next %tile in the queue
@@ -292,12 +262,12 @@ void cacaMap::downloadPicture()
 		}
 		else
 		{
-		//	cout<<"no items in the queue"<<endl;
+            std::cout << "no items in the queue" << std::endl;
 		}
 	}
 	else
 	{
-		cout<<"another download is already in progress... "<<endl;
+        std::cout << "another download is already in progress... " << std::endl;
 	}
 }
 /**
@@ -310,7 +280,7 @@ void cacaMap::loadCache()
 	tileCache.clear();
 	QDir::setCurrent(folder);
 	QDir dir;
-	if (dir.cd("cache"))
+    if (dir.cd(cacheDir))
 	{
 		if (dir.cd(servermgr.tileCacheFolder()))
 		{
@@ -341,7 +311,7 @@ void cacaMap::loadCache()
 			}
 		}
 		QDir::setCurrent(folder);
-		cout<<"cache size "<<(float)cacheSize/1024/1024<<" MB"<<endl;
+        std::cout << "cache size " << (float)cacheSize/1024/1024 << " MB" << std::endl;
 	}
 }
 
@@ -367,7 +337,7 @@ void cacaMap::slotDownloadReady(QNetworkReply * _reply)
 	QHash<QString,tile>::const_iterator i;
 	i = downloadQueue.constBegin();
 	
-	for( i; i!=downloadQueue.constEnd();i++)
+    for(i; i!=downloadQueue.constEnd();i++)
 	{
 		if (i.value().url == surl)
 		{
@@ -399,36 +369,30 @@ void cacaMap::slotDownloadReady(QNetworkReply * _reply)
 
 				QDir::setCurrent(folder);
 				QDir dir;
-				if (!dir.exists("cache"))
-				{
-					dir.mkdir("cache");
-				}
-				dir.cd("cache");
+                if (!dir.exists(cacheDir))
+                    dir.mkdir(cacheDir);
+
+                dir.cd(cacheDir);
 				if (!dir.exists(servermgr.tileCacheFolder()))
-				{
 					dir.mkdir(servermgr.tileCacheFolder());
-				}
+
 				dir.cd(servermgr.tileCacheFolder());
 
 				if(!dir.exists(zdir))
-				{
 					dir.mkdir(zdir);	
-				}
+
 				dir.cd(zdir);
 				if(!dir.exists(xdir))
-				{
 					dir.mkdir(xdir);	
-				}
+
 				dir.cd(xdir);
 				
 				QDir::setCurrent(dir.path());
 				QFile f(tilefile);
 				f.open(QIODevice::WriteOnly);
 				quint64 byteswritten = f.write(data);
-				if (byteswritten <= 0)
-				{
-					cout<<"error writing to file "<<f.fileName().toStdString()<<endl;
-				}
+                if (byteswritten <= 0)
+                    std::cout << "error writing to file: " << f.fileName().toStdString() << std::endl;
 				f.close();
 				//remove item from download queue
 				downloadQueue.remove(i.key());
@@ -441,29 +405,27 @@ void cacaMap::slotDownloadReady(QNetworkReply * _reply)
 			}
 			else
 			{
-				cout<<"downloaded tile "<<surl.toStdString()<<" was not in Download queue. Data ignored"<<endl;
+                std::cout << "downloaded tile " << surl.toStdString() << " was not in Download queue. Data ignored" << std::endl;
 			}
 			downloading = false;
 			downloadPicture();
-			
 		}
 		else
 		{
-			//cout<<"no data"<<endl;
+            //cout<<"no data" << std::endl;
 		}
 		update();
 	}
 	else
 	{
-		cout<<"network error: ("<<error<<") "<<_reply->errorString().toStdString()<<endl;
+        std::cout << "network error: (" << error << ") " << _reply->errorString().toStdString() << std::endl;
 		
 		if(found)
 		{
 			//if content is not available we dont want to keep requesting it
 			if (error == QNetworkReply::ContentNotFoundError)
-			{
 				unavailableTiles.insert(i.key(),1);
-			}
+
 			//remove the item from queue and try again
 			downloadQueue.remove(i.key());
 			downloading = false;
@@ -477,8 +439,9 @@ Slot that gets called when theres is an network error
 */
 void cacaMap::slotError(QNetworkReply::NetworkError _code)
 {
-	cout<<"some error "<<_code<<endl;
+    std::cout << "some error " << _code << std::endl;
 }
+
 /**
 Widget resize event handler
 */
@@ -610,7 +573,7 @@ void cacaMap::updateBuffer()
 					}
 					else
 					{
-						cout<<"no file found "<<path.toStdString()<<fileName.toStdString()<<endl;
+                        std::cout << "no file found " << path.toStdString() << fileName.toStdString() << std::endl;
 					}
 				}
 				//check if it's in the list of unavailable tiles
