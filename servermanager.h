@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 Copyright 2010 Jean Fairlie jmfairlie@gmail.com
 
@@ -12,10 +14,6 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
-
-
-#ifndef _SRVRMGR
-#define _SRVRMGR
 
 #include <QtXml>
 struct tileserver
@@ -32,18 +30,16 @@ class servermanager
 public:
 	bool loadConfigFile(QString);
 	QString getTileUrl(int,quint32,quint32);
-	QString tileCacheFolder();
+    QString tileCacheFolder() const;
 	//returns the filename of the file as it should be stored in HD
 	QString fileName(quint32);
 	void selectServer(int);
-	QString serverName();
-	QString filePath(int, quint32);
-	QStringList getServerNames();
+    QString serverName() const;
+    QString filePath(int, quint32) const;
+    QStringList getServerNames() const;
 
 private:
-	QVector<tileserver> serverlist;/**< list of server structs*/
-	int selectedServer;/**< index in list of current server*/
-	QStringList serverNames;/**< names of servers in xml file*/
+    QVector<tileserver> serverlist; /**< list of server structs*/
+    int selectedServer;             /**< index in list of current server*/
+    QStringList serverNames;        /**< names of servers in xml file*/
 };
-
-#endif

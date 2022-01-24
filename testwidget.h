@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 Copyright 2010 Jean Fairlie jmfairlie@gmail.com
 
@@ -12,11 +14,11 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
 
-#ifndef TESTWIDGET_H
-#define TESTWIDGET_H
-
 #include <QtGui>
 #include <QtWidgets/QComboBox>
+#include <QtWidgets/QStatusBar>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
 #include "myderivedmap.h"
 #include <iostream>
 
@@ -29,15 +31,27 @@ public:
 private:
 	void populateCombo();
 
-	myDerivedMap*  map;
-	QVBoxLayout * vlayout;
+    myDerivedMap* m_map;
+    QVBoxLayout* m_vlayout;
 
-	QComboBox * combo;
+    QComboBox* m_combo;
+    QHBoxLayout* m_hlayout;
+    QStatusBar* m_statusBar;
+    QLabel* m_statusZoomLabel;
+    QLineEdit* m_statusZoomEdit;
+    QLabel* m_statusLatitudeLabel;
+    QLineEdit* m_statusLatitudeEdit;
+    QLabel* m_statusLongitudeLabel;
+    QLineEdit* m_statusLongitudeEdit;
+
 protected:
 	void paintEvent(QPaintEvent*);
+    void genStatus(bool fillEdits = true);
 private slots:
 	void setServer(int);
+    void updateZoom();
+    void updateGeoCoors();
+    void updateEdits();
+
+    void showEvent(QShowEvent* showEvent);
 };
-
-
-#endif

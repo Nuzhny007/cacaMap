@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 Copyright 2010 Jean Fairlie jmfairlie@gmail.com
 
@@ -17,8 +19,6 @@ GNU General Public License for more details.
 * CacaMap is a Simple Qt OSM Map Widget 
 */
 
-#ifndef CACAMAP_H
-#define CACAMAP_H
 #include <QtGui>
 #include <QtWidgets/QWidget>
 #include <QtNetwork>
@@ -29,7 +29,6 @@ GNU General Public License for more details.
 /**
 * The quint32 version of QPoint
 */
-
 struct longPoint
 {
     quint32 x = 0; /**< x coord. */
@@ -91,33 +90,38 @@ Q_OBJECT
 
 public:	
 	cacaMap(QWidget * _parent=0);
-	virtual ~cacaMap();
+    virtual ~cacaMap() = default;
 
-	void setGeoCoords(QPointF);
 	bool zoomIn();
 	bool zoomOut();
 	bool setZoom(int level);
-	QPointF getGeoCoords();
-	QStringList getServerNames();
-	void setServer(int);
-	int getZoom();
+    void setGeoCoords(QPointF, bool);
+    QPointF getGeoCoords() const;
+    QStringList getServerNames() const;
+    void setServer(int);
+    int getZoom() const;
+    int getMinZoom() const;
+    int getMaxZoom() const;
+
+Q_SIGNALS:
+    void updateParams();
 
 private:
-    QNetworkAccessManager *manager; /**< manages http requests. */
-    tileSet tilesToRender;          /**< range of visible tiles. */
-    QHash<QString,int> tileCache;   /**< list of cached tiles (in HDD). */
-    QHash<QString,tile> downloadQueue; /**< list of tiles waiting to be downloaded. */
-    QHash<QString,int> unavailableTiles; /**< list of tiles that were not found on the server.*/
-    bool downloading = false;       /**< flag that indicates if there is a download going on. */
-    QString folder;                 /**< root application folder. */
-    QMovie loadingAnim;             /**< to show a 'loading' animation for yet unavailable tiles. */
+    std::unique_ptr<QNetworkAccessManager> manager; /**< manages http requests. */
+    tileSet tilesToRender;           /**< range of visible tiles. */
+    QHash<QString, int> tileCache;   /**< list of cached tiles (in HDD). */
+    QHash<QString, tile> downloadQueue; /**< list of tiles waiting to be downloaded. */
+    QHash<QString, int> unavailableTiles; /**< list of tiles that were not found on the server.*/
+    bool downloading = false;        /**< flag that indicates if there is a download going on. */
+    QString folder;                  /**< root application folder. */
+    QMovie loadingAnim;              /**< to show a 'loading' animation for yet unavailable tiles. */
 	QPixmap notAvailableTile;
-	servermanager servermgr;	
+    servermanager servermgr;
 
 	void renderMap(QPainter &);
 	void downloadPicture();
 	void loadCache();
-	QString getTilePath(int, qint32);
+    QString getTilePath(int, qint32) const;
 	QPixmap getTilePatch(int,quint32,quint32,int,int,int);
 
 protected:
@@ -130,8 +134,7 @@ protected:
     int tileSize = 256;                /**< size in px of the square %tile. */
     quint32 cacheSize = 0;             /**< current %tile cache size in bytes. */
     // check QtMobility QGeoCoordinate
-    QPointF geocoords = QPointF(-123.140499, 49.313331); /**< current longitude and latitude. */
-	QPixmap* imgBuffer;
+    std::unique_ptr<QPixmap> imgBuffer;
 	QPixmap tmpbuff;
     float buffzoomrate = 1.0;
 
@@ -142,9 +145,11 @@ protected:
 	void updateBuffer();
 	void updateContent();
 
+private:
+    QPointF geocoords = QPointF(-123.140499, 49.313331); /**< current longitude and latitude. */
+
 protected slots:
 	void slotDownloadProgress(qint64, qint64);
 	void slotDownloadReady(QNetworkReply *);
 	void slotError(QNetworkReply::NetworkError);
 };
-#endif

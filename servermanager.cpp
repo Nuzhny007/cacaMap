@@ -129,7 +129,7 @@ QString servermanager::getTileUrl(int zoom, quint32 x, quint32 y)
 /**
 * @return name of the cache folder for the given tile server
 */
-QString servermanager::tileCacheFolder()
+QString servermanager::tileCacheFolder() const
 {
     return  serverlist.at(selectedServer).folder;
 }
@@ -149,7 +149,7 @@ QString servermanager::fileName(quint32 y)
 /**
 * @return tile file path
 */
-QString servermanager::filePath(int zoom, quint32 x)
+QString servermanager::filePath(int zoom, quint32 x) const
 {
     QString filetmpl = serverlist.at(selectedServer).path;
     QString sz, sx;
@@ -164,7 +164,7 @@ QString servermanager::filePath(int zoom, quint32 x)
 /**
 * @return server name
 */
-QString servermanager::serverName()
+QString servermanager::serverName() const
 {
     return serverlist.at(selectedServer).name;
 }
@@ -182,7 +182,7 @@ void servermanager::selectServer(int index)
 * return list of server names
 */
 
-QStringList servermanager::getServerNames()
+QStringList servermanager::getServerNames() const
 {	
     return serverNames;
 }

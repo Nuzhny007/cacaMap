@@ -1,29 +1,35 @@
 #include "myderivedmap.h"
 
+///
+/// \brief myDerivedMap::myDerivedMap
+/// \param parent
+///
 myDerivedMap::myDerivedMap(QWidget* parent)
     : cacaMap(parent)
 {
     std::cout << "derived constructor" << std::endl;
-	timer = new QTimer(this);
-	
-	hlayout = new QHBoxLayout;
+    m_timer = new QTimer(this);
 
-	slider = new QSlider(Qt::Vertical,this);
-	slider->setTickPosition(QSlider::TicksBothSides);
-	slider->setMaximum(maxZoom);
-	slider->setMinimum(minZoom);
-	slider->setSliderPosition(zoom);
-	connect(slider, SIGNAL(valueChanged(int)),this, SLOT(updateZoom(int)));
+    m_hlayout = new QHBoxLayout;
+
+    m_slider = new MySlider(Qt::Vertical, this);
+    m_slider->setTickPosition(QSlider::TicksBothSides);
+    m_slider->setRange(minZoom, maxZoom);
+    m_slider->setSliderPosition(zoom);
+    connect(m_slider, SIGNAL(valueChanged(int)), this, SLOT(updateZoom(int)));
 	
-	hlayout->addWidget(slider);
-	hlayout->addStretch();
-    setLayout(hlayout);
+    m_hlayout->addWidget(m_slider);
+    m_hlayout->addStretch();
+    setLayout(m_hlayout);
 }
 
+///
+/// \brief myDerivedMap::~myDerivedMap
+///
 myDerivedMap::~myDerivedMap()
 {
-	delete slider;
-	delete hlayout;
+    delete m_slider;
+    delete m_hlayout;
 }
 
 /**
@@ -33,7 +39,7 @@ This is used for scrolling the map
 */
 void myDerivedMap::mousePressEvent(QMouseEvent* e)
 {
-	mouseAnchor = e->pos();
+    m_mouseAnchor = e->pos();
 }
 
 /**
@@ -42,13 +48,13 @@ translates it into a new coordinate, map is rerendered
 */
 void myDerivedMap::mouseMoveEvent(QMouseEvent* e)
 {
-	QPoint delta = e->pos()- mouseAnchor;
-	mouseAnchor = e->pos();
-	longPoint p = myMercator::geoCoordToPixel(geocoords,zoom,tileSize);
+    QPoint delta = e->pos() - m_mouseAnchor;
+    m_mouseAnchor = e->pos();
+    longPoint p = myMercator::geoCoordToPixel(getGeoCoords(), zoom, tileSize);
 	
 	p.x-= delta.x();
 	p.y-= delta.y();
-	geocoords = myMercator::pixelToGeoCoord(p,zoom,tileSize);
+    setGeoCoords(myMercator::pixelToGeoCoord(p, zoom, tileSize), true);
 	updateContent();
 	update();
 }
@@ -59,19 +65,19 @@ void myDerivedMap::mouseDoubleClickEvent(QMouseEvent* e)
 	if (e->button() == Qt::LeftButton)
 	{
 		QPoint deltapx = e->pos() - QPoint(width()/2,height()/2);
-		longPoint currpospx = myMercator::geoCoordToPixel(geocoords,zoom,tileSize);
+        longPoint currpospx = myMercator::geoCoordToPixel(getGeoCoords(), zoom, tileSize);
 		longPoint newpospx;
 		newpospx.x = currpospx.x + deltapx.x();
 		newpospx.y = currpospx.y + deltapx.y();
-		destination = myMercator::pixelToGeoCoord(newpospx,zoom,tileSize);
-		connect(timer,SIGNAL(timeout()),this,SLOT(zoomAnim()));
-		timer->start(40);
+        m_destination = myMercator::pixelToGeoCoord(newpospx,zoom,tileSize);
+        connect(m_timer,SIGNAL(timeout()),this,SLOT(zoomAnim()));
+        m_timer->start(40);
 	}
 	//do a simple zoom out for now
 	else if (e->button() == Qt::RightButton)
 	{
 		zoomOut();
-		slider->setSliderPosition(zoom);
+        m_slider->setSliderPosition(zoom);
 		update();
 	}
 }
@@ -79,22 +85,22 @@ void myDerivedMap::mouseDoubleClickEvent(QMouseEvent* e)
 void myDerivedMap::zoomAnim()
 {
 	float delta = buffzoomrate - 0.5;
-	if (delta > mindistance)
+    if (delta > m_minDistance)
 	{
-		QPointF deltaSpace = destination - geocoords;
-		geocoords+=animrate*deltaSpace;
-		buffzoomrate-= delta*animrate; 
+        QPointF deltaSpace = m_destination - getGeoCoords();
+        setGeoCoords(getGeoCoords() + m_animRate * deltaSpace, true);
+        buffzoomrate-= delta*m_animRate;
 		updateContent();
 	}
 	//you are already there
 	else
 	{
-		timer->stop();
-		disconnect(timer,SIGNAL(timeout()),this,SLOT(zoomAnim()));
-		geocoords = destination;
+        m_timer->stop();
+        disconnect(m_timer,SIGNAL(timeout()),this,SLOT(zoomAnim()));
+        setGeoCoords(m_destination, true);
 		buffzoomrate = 1.0;
 		zoomIn();
-		slider->setSliderPosition(zoom);
+        m_slider->setSliderPosition(zoom);
 	}
 	update();
 }

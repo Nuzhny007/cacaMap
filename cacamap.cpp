@@ -23,21 +23,20 @@ GNU General Public License for more details.
 * @return a longpoint struct containing the x and y px coordinates
 * in the map for the given geocoordinates and zoom level.
 */
-longPoint myMercator::geoCoordToPixel(QPointF const &geocoord, int zoom, int tilesize)
+longPoint myMercator::geoCoordToPixel(QPointF const& geocoord, int zoom, int tilesize)
 {
- 	qreal  longitude = geocoord.x();
-	qreal  latitude = geocoord.y();
+    qreal longitude = geocoord.x();
+    qreal latitude = geocoord.y();
 	
-	//height, width of the whole map,this is, all tiles for a given zoom level put together
-	quint32 mapsize =  (1<<zoom)*tilesize;
+    //height, width of the whole map, this is, all tiles for a given zoom level put together
+    quint32 mapsize =  (1<<zoom) * tilesize;
 	
-	qreal latitude_m = atanh(sin(latitude/180.0*M_PI))*180.0/M_PI;
+    qreal latitude_m = atanh(sin(latitude / 180.0 * M_PI)) * 180.0 / M_PI;
 
-	quint32 x = mapsize*(longitude + 180.0)/360.0;
+    quint32 x = mapsize * (longitude + 180.0) / 360.0;
+    quint32 y = mapsize * (180.0 - latitude_m) / 360.0;
 	
-	quint32 y = mapsize*(180.0 - latitude_m)/360.0;
-	
-    return longPoint(x,y);
+    return longPoint(x, y);
 }
 
 /**
@@ -54,13 +53,13 @@ QPointF myMercator::pixelToGeoCoord(longPoint const &pixelcoord, int zoom, int t
     long y = pixelcoord.y;
 	
 	//height, width of the whole map,this is, all tiles for a given zoom level put together
-	quint32 mapsize =  (1<<zoom)*tilesize;
+    quint32 mapsize = (1<<zoom)*tilesize;
 	
-	qreal longitude = x*360.0/mapsize - 180.0;	
-	qreal latitude_m = 180.0 - y*360.0/mapsize;
-	qreal latitude = asin(tanh(latitude_m*M_PI/180.0))*180/M_PI;
+    qreal longitude = x * 360.0 / mapsize - 180.0;
+    qreal latitude_m = 180.0 - y * 360.0 / mapsize;
+    qreal latitude = asin(tanh(latitude_m * M_PI / 180.0)) * 180 / M_PI;
 	
-	return QPointF(longitude,latitude);
+    return QPointF(longitude, latitude);
 }
 
 /**
@@ -79,21 +78,24 @@ cacaMap::cacaMap(QWidget* parent)
         std::cout << "error loading server file: " << serversFile.toStdString() << std::endl;
 
     loadCache();
-    manager = new QNetworkAccessManager(this);
+    manager = std::make_unique<QNetworkAccessManager>(this);
     loadingAnim.setFileName("loading.gif");
     loadingAnim.setScaledSize(QSize(tileSize,tileSize));
     loadingAnim.start();
     notAvailableTile.load("notavailable.jpeg");
-    imgBuffer = new QPixmap(size());
+    imgBuffer = std::make_unique<QPixmap>(size());
 }
 
 /**
 Sets the latitude and longitude to the coords in newcoords
 @param newcoords the new coordinates.
 */
-void cacaMap::setGeoCoords(QPointF newcoords)
+void cacaMap::setGeoCoords(QPointF newcoords, bool userInput)
 {
 	geocoords = newcoords;
+    updateContent();
+    if (userInput)
+        emit updateParams();
 }
 /**
 * zooms in one level
@@ -106,6 +108,7 @@ bool cacaMap::zoomIn()
 		zoom++;
 		downloadQueue.clear();
 		updateContent();
+        emit updateParams();
 		return true;
 	}
 	return false;
@@ -121,6 +124,7 @@ bool cacaMap::zoomOut()
 		zoom--;
 		downloadQueue.clear();
 		updateContent();
+        emit updateParams();
 		return true;
 	}
 	return false;
@@ -132,11 +136,12 @@ bool cacaMap::zoomOut()
 */
 bool cacaMap::setZoom(int level)
 {
-	if (level>= minZoom && level <= maxZoom)
+    if (zoom != level && level >= minZoom && level <= maxZoom)
 	{
 		zoom = level;
 		downloadQueue.clear();
 		updateContent();
+        emit updateParams();
 		return true;
 	}
 	return false;
@@ -145,14 +150,14 @@ bool cacaMap::setZoom(int level)
 /**
 * @return current geocoords
 */
-QPointF cacaMap::getGeoCoords()
+QPointF cacaMap::getGeoCoords() const
 {
 	return geocoords;
 }
 /**
 *@return list of available tile server names
 */
-QStringList cacaMap::getServerNames()
+QStringList cacaMap::getServerNames() const
 {
 	return servermgr.getServerNames();		
 }
@@ -168,13 +173,30 @@ void cacaMap::setServer(int index)
 	updateContent();
 	update();
 }
+
 /**
 *   @return current zoom level
 */
-int cacaMap::getZoom()
+int cacaMap::getZoom() const
 {
 	return zoom;
-}	
+}
+
+/**
+*   @return min zoom level
+*/
+int cacaMap::getMinZoom() const
+{
+    return minZoom;
+}
+
+/**
+*   @return max zoom level
+*/
+int cacaMap::getMaxZoom() const
+{
+    return maxZoom;
+}
 
 /**
 *@param zoom zoom level
@@ -182,9 +204,9 @@ int cacaMap::getZoom()
 *@return string with the path to the folder containing the tiles in 
 *for zoom level and x column
 */
-QString cacaMap::getTilePath(int zoom,qint32 x)
+QString cacaMap::getTilePath(int zoom, qint32 x) const
 {
-	return "cache/"+servermgr.tileCacheFolder()+servermgr.filePath(zoom,x);
+    return "cache/"+servermgr.tileCacheFolder() + servermgr.filePath(zoom, x);
 }
 
 /**
@@ -257,7 +279,7 @@ void cacaMap::downloadPicture()
 			request.setUrl(QUrl(surl));
 			QNetworkReply *reply = manager->get(request);
 			connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),this, SLOT(slotError(QNetworkReply::NetworkError)));
-			connect(manager, SIGNAL(finished(QNetworkReply*)),this, SLOT(slotDownloadReady(QNetworkReply*)));
+            connect(manager.get(), SIGNAL(finished(QNetworkReply*)),this, SLOT(slotDownloadReady(QNetworkReply*)));
 			connect(reply, SIGNAL(downloadProgress(qint64,qint64)),this, SLOT(slotDownloadProgress(qint64, qint64)));
 		}
 		else
@@ -318,7 +340,7 @@ void cacaMap::loadCache()
 /**
 Slot to keep track of download progress
 */
-void cacaMap::slotDownloadProgress(qint64 _bytesReceived, qint64 _bytesTotal)
+void cacaMap::slotDownloadProgress(qint64 /*_bytesReceived*/, qint64 /*_bytesTotal*/)
 {
 }
 
@@ -334,10 +356,8 @@ void cacaMap::slotDownloadReady(QNetworkReply * _reply)
 	QUrl url = req.url();
 	QString surl = url.toString();
 	bool found = false;
-	QHash<QString,tile>::const_iterator i;
-	i = downloadQueue.constBegin();
-	
-    for(i; i!=downloadQueue.constEnd();i++)
+    QHash<QString, tile>::const_iterator i = downloadQueue.constBegin();
+    for (; i != downloadQueue.constEnd(); ++i)
 	{
 		if (i.value().url == surl)
 		{
@@ -445,10 +465,9 @@ void cacaMap::slotError(QNetworkReply::NetworkError _code)
 /**
 Widget resize event handler
 */
-void cacaMap::resizeEvent(QResizeEvent* event)
+void cacaMap::resizeEvent(QResizeEvent* /*event*/)
 {
-	delete imgBuffer;
-	imgBuffer = new QPixmap(size());
+    imgBuffer = std::make_unique<QPixmap>(size());
 	updateContent();
 }
 
@@ -458,50 +477,42 @@ void cacaMap::resizeEvent(QResizeEvent* event)
 void cacaMap::renderMap(QPainter &p)
 {
 	//QRect dest(QPoint(0,0), size());
-	if (buffzoomrate<1.0)
+    if (buffzoomrate < 1.0)
 	{
 		int ox = width()*(1-buffzoomrate)/2;
 		int oy = height()*(1-buffzoomrate)/2;
-		QRect src(QPoint(ox,oy),size()*buffzoomrate); 
+        QRect src(QPoint(ox, oy), size() * buffzoomrate);
 		
-		tmpbuff= imgBuffer->copy(src).scaled(size(),Qt::KeepAspectRatio);
+        tmpbuff = imgBuffer->copy(src).scaled(size(), Qt::KeepAspectRatio);
 
-		p.drawPixmap(0,0,tmpbuff);
-		//p.drawPixmap(dest, *imgBuffer,src);//this is shorter but slower
+        p.drawPixmap(0, 0, tmpbuff);
 	}
 	else
 	{
-		p.drawPixmap(0,0,*imgBuffer);
+        p.drawPixmap(0, 0, *imgBuffer);
 	}
 }
+
 /**
 Paint even handler
 */
-void cacaMap::paintEvent(QPaintEvent *event)
+void cacaMap::paintEvent(QPaintEvent* /*event*/)
 {
 	QPainter p(this);
 	renderMap(p);
 }
 
 /**
-destructor
-*/
-cacaMap::~cacaMap()
-{
-	delete manager;
-	delete imgBuffer;
-}
-/**
 Figures out which tiles are visible
 Based on the current size of the widget, the %tile size, current coordinates and zoom level
 */
 void cacaMap::updateTilesToRender()
 {
-	longPoint pixelCoords = myMercator::geoCoordToPixel(geocoords,zoom,tileSize); 
+    longPoint pixelCoords = myMercator::geoCoordToPixel(geocoords, zoom, tileSize);
 
 	//central tile coords
-	qint32 xtile = pixelCoords.x/tileSize;
-	qint32 ytile = pixelCoords.y/tileSize;
+    qint32 xtile = pixelCoords.x / tileSize;
+    qint32 ytile = pixelCoords.y / tileSize;
 	//offset of central tile respect to the center of the widget
 	int offsetx = pixelCoords.x % tileSize;
 	int offsety = pixelCoords.y % tileSize;
@@ -537,11 +548,11 @@ void cacaMap::updateTilesToRender()
 */
 void cacaMap::updateBuffer()
 {
-	QPainter p(imgBuffer);
+    QPainter p(imgBuffer.get());
 	imgBuffer->fill(Qt::gray);
-	for (qint32 i= tilesToRender.left;i<= tilesToRender.right; i++)
+    for (qint32 i= tilesToRender.left; i <= tilesToRender.right; i++)
 	{
-		for (qint32 j=tilesToRender.top ; j<= tilesToRender.bottom; j++)
+        for (qint32 j = tilesToRender.top; j <= tilesToRender.bottom; j++)
 		{
 			QString x;
 			QString y;
@@ -599,15 +610,13 @@ void cacaMap::updateBuffer()
 					//while the tile is downloading	
 					image = getTilePatch(tilesToRender.zoom,valx,j,0,0,tileSize);
 				}
-				p.drawPixmap(posx,posy,image);
+                p.drawPixmap(posx, posy, image);
 			}
 		}
 	}
-	p.drawRect(0,0,width()-1, height()-1);
+    p.drawRect(0, 0, width() - 1, height() - 1);
 	if (!downloading)
-	{
 		downloadPicture();
-	}
 }
 /**
 * calls the following two functions
