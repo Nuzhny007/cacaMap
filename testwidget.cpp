@@ -115,10 +115,12 @@ void testWidget::genStatus(bool fillEdits)
 ///
 void testWidget::updateEdits()
 {
-    QPointF geoCoords = m_map->getGeoCoords();
-    m_statusZoomEdit->setText(QString::number(m_map->getZoom()));
-    m_statusLatitudeEdit->setText(QString::number(geoCoords.y(), 'g', 8));
-    m_statusLongitudeEdit->setText(QString::number(geoCoords.x(), 'g', 9));
+    //QPointF geoCoords = m_map->getGeoCoords();
+    //m_statusZoomEdit->setText(QString::number(m_map->getZoom()));
+    //m_statusLatitudeEdit->setText(QString::number(geoCoords.y(), 'g', 8));
+    //m_statusLongitudeEdit->setText(QString::number(geoCoords.x(), 'g', 9));
+
+    genStatus(true);
 }
 
 ///
@@ -140,7 +142,6 @@ void testWidget::populateCombo()
 void testWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
-    genStatus(false);
 }
 
 ///
