@@ -17,7 +17,7 @@ GNU General Public License for more details.
 /// \brief testWidget::testWidget
 /// \param parent
 ///
-testWidget::testWidget(QWidget* parent)
+MainWidget::MainWidget(QWidget* parent)
     : QWidget(parent)
 {
     m_map = new myDerivedMap(this);
@@ -48,7 +48,7 @@ testWidget::testWidget(QWidget* parent)
     m_statusLongitudeEdit = new QLineEdit(this);
     //m_statusLongitudeEdit->setValidator(new QDoubleValidator(-180, 180, 9, this));
 
-#if 0
+#if USE_ONLY_STATUS
     m_statusBar->addPermanentWidget(m_statusZoomLabel);
     m_statusBar->addPermanentWidget(m_statusZoomEdit);
     m_statusBar->addPermanentWidget(m_statusLatitudeLabel);
@@ -87,7 +87,7 @@ testWidget::testWidget(QWidget* parent)
 /// \brief testWidget::showEvent
 /// \param showEvent
 ///
-void testWidget::showEvent(QShowEvent* showEvent)
+void MainWidget::showEvent(QShowEvent* showEvent)
 {
     QWidget::showEvent(showEvent);
     activateWindow();
@@ -97,7 +97,7 @@ void testWidget::showEvent(QShowEvent* showEvent)
 /// \brief testWidget::GenStatus
 /// \return
 ///
-void testWidget::genStatus(bool fillEdits)
+void MainWidget::genStatus(bool fillEdits)
 {
     QPointF geoCoords = m_map->getGeoCoords();
     if (fillEdits)
@@ -106,27 +106,24 @@ void testWidget::genStatus(bool fillEdits)
         m_statusLatitudeEdit->setText(QString::number(geoCoords.y(), 'g', 8));
         m_statusLongitudeEdit->setText(QString::number(geoCoords.x(), 'g', 9));
     }
+#if !USE_ONLY_STATUS
     QString res = QString::asprintf("zoom %d, latitude %.6f, longitude %.6f", m_map->getZoom(), geoCoords.y(), geoCoords.x());
     m_statusBar->showMessage(res);
+#endif
 }
 
 ///
 /// \brief testWidget::updateEdits
 ///
-void testWidget::updateEdits()
+void MainWidget::updateEdits()
 {
-    //QPointF geoCoords = m_map->getGeoCoords();
-    //m_statusZoomEdit->setText(QString::number(m_map->getZoom()));
-    //m_statusLatitudeEdit->setText(QString::number(geoCoords.y(), 'g', 8));
-    //m_statusLongitudeEdit->setText(QString::number(geoCoords.x(), 'g', 9));
-
     genStatus(true);
 }
 
 ///
 /// \brief testWidget::populateCombo
 ///
-void testWidget::populateCombo()
+void MainWidget::populateCombo()
 {
     QStringList l = m_map->getServerNames();
 
@@ -139,7 +136,7 @@ void testWidget::populateCombo()
 ///
 /// \brief testWidget::paintEvent
 ///
-void testWidget::paintEvent(QPaintEvent*)
+void MainWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
 }
@@ -147,7 +144,7 @@ void testWidget::paintEvent(QPaintEvent*)
 ///
 /// \brief testWidget::~testWidget
 ///
-testWidget::~testWidget()
+MainWidget::~MainWidget()
 {
     delete m_map;
     delete m_vlayout;
@@ -157,7 +154,7 @@ testWidget::~testWidget()
 /// \brief testWidget::setServer
 /// \param index
 ///
-void testWidget::setServer(int index)
+void MainWidget::setServer(int index)
 {
     m_map->setServer(index);
     genStatus(true);
@@ -166,7 +163,7 @@ void testWidget::setServer(int index)
 ///
 /// \brief testWidget::updateZoom
 ///
-void testWidget::updateZoom()
+void MainWidget::updateZoom()
 {
     int zoom = m_statusZoomEdit->text().toInt();
     m_map->setZoom(zoom);
@@ -175,7 +172,7 @@ void testWidget::updateZoom()
 ///
 /// \brief testWidget::updateGeoCoors
 ///
-void testWidget::updateGeoCoors()
+void MainWidget::updateGeoCoors()
 {
     QPointF geoCoords;
     geoCoords.setY(m_statusLatitudeEdit->text().toDouble());

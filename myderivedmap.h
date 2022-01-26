@@ -20,7 +20,7 @@ protected:
     void paintEvent(QPaintEvent *ev) override
     {
         QSlider::paintEvent(ev);
-
+#if 0
         auto round_value = std::floor(value());
         auto val_text = QString::number(round_value);
 
@@ -48,7 +48,8 @@ protected:
         {
             return;
         }
-        //painter.drawText(QPoint(x_pos, y_pos), val_text);
+        painter.drawText(QPoint(x_pos, y_pos), val_text);
+#endif
     }
 };
 

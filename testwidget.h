@@ -22,12 +22,14 @@ GNU General Public License for more details.
 #include "myderivedmap.h"
 #include <iostream>
 
-class testWidget: public QWidget
+#define USE_ONLY_STATUS 1
+
+class MainWidget: public QWidget
 {
 Q_OBJECT
 public:
-	testWidget(QWidget* parent=0);
-	~testWidget();
+    MainWidget(QWidget* parent=0);
+    ~MainWidget();
 private:
 	void populateCombo();
 
@@ -35,7 +37,9 @@ private:
     QVBoxLayout* m_vlayout;
 
     QComboBox* m_combo;
+#if !USE_ONLY_STATUS
     QHBoxLayout* m_hlayout;
+#endif
     QStatusBar* m_statusBar;
     QLabel* m_statusZoomLabel;
     QLineEdit* m_statusZoomEdit;
