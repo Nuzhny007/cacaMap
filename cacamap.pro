@@ -8,5 +8,5 @@ DEPENDPATH += .
 INCLUDEPATH += .
 QT+=widgets network xml
 # Input
-HEADERS += cacamap.h myderivedmap.h testwidget.h servermanager.h
-SOURCES += cacamap.cpp main.cpp myderivedmap.cpp testwidget.cpp servermanager.cpp
+HEADERS += cacamap.h myderivedmap.h mainwidget.h servermanager.h
+SOURCES += cacamap.cpp main.cpp myderivedmap.cpp mainwidget.cpp servermanager.cpp

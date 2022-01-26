@@ -43,7 +43,7 @@ bool servermanager::loadConfigFile(QString xmlfile)
         std::cout << "no servers defined in xml file: " << xmlfile.toStdString() << std::endl;
         return false;
     }
-    for (quint32 i = 0; i < servers.length(); ++i)
+    for (int i = 0; i < servers.length(); ++i)
     {
         QDomNode server = servers.item(i);
         QDomNode namenode = server.namedItem("name");
