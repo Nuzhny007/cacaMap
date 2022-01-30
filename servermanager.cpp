@@ -102,7 +102,7 @@ bool servermanager::loadConfigFile(QString xmlfile)
 
         serverlist.append(serveritem);
     }
-    selectedServer = 0;
+    selectedServer = (serverlist.size() > 1) ? 1 : 0;
     file.close();
     return true;
 }
@@ -131,7 +131,7 @@ QString servermanager::getTileUrl(int zoom, quint32 x, quint32 y)
 */
 QString servermanager::tileCacheFolder() const
 {
-    return  serverlist.at(selectedServer).folder;
+    return serverlist.at(selectedServer).folder;
 }
 
 /**
@@ -160,7 +160,6 @@ QString servermanager::filePath(int zoom, quint32 x) const
     return filetmpl;
 }
 
-
 /**
 * @return server name
 */
@@ -168,10 +167,18 @@ QString servermanager::serverName() const
 {
     return serverlist.at(selectedServer).name;
 }
+
+/**
+* @return server index
+*/
+int servermanager::serverIndex() const
+{
+    return selectedServer;
+}
+
 /**
 * selects server at index
 */
-
 void servermanager::selectServer(int index)
 {
     if (index >=0 && index < serverlist.size())

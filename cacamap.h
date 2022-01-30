@@ -31,8 +31,8 @@ GNU General Public License for more details.
 */
 struct longPoint
 {
-    quint32 x = 0; /**< x coord. */
-    quint32 y = 0; /**< y coord.*/
+    qint64 x = 0; /**< x coord. */
+    qint64 y = 0; /**< y coord.*/
     longPoint(quint32 x_, quint32 y_) noexcept
         : x(x_), y(y_)
     {
@@ -99,6 +99,7 @@ public:
     QPointF getGeoCoords() const;
     QStringList getServerNames() const;
     void setServer(int);
+    int getServer() const;
     int getZoom() const;
     int getMinZoom() const;
     int getMaxZoom() const;
@@ -127,7 +128,7 @@ private:
 protected:
     int zoom = 16;    /**< Map zoom level. */
     int minZoom = 0;  /**< Minimum zoom level (farthest away).*/
-    int maxZoom = 20; /**< Maximum zoom level (closest).*/
+    int maxZoom = 21; /**< Maximum zoom level (closest).*/
 
     QString cacheDir = "cache";
 
@@ -138,7 +139,7 @@ protected:
 	QPixmap tmpbuff;
     float buffzoomrate = 1.0;
 
-	bool bufferDirty; /**< image buffer needs to be updated. */	
+    bool bufferDirty = false; /**< image buffer needs to be updated. */
 	void resizeEvent(QResizeEvent*);
 	void paintEvent(QPaintEvent *);
 	void updateTilesToRender();

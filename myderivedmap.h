@@ -3,6 +3,7 @@
 #include <QtWidgets/QLayout>
 #include <QtWidgets/QSlider>
 #include "cacamap.h"
+#include "GeoFrame.h"
 
 ///
 /// \brief The MySlider class
@@ -62,11 +63,19 @@ Q_OBJECT
 public:
 	myDerivedMap(QWidget* _parent=0);
     ~myDerivedMap();
+
+    bool AddFrame(const QString& pathTofile, QTransform transform);
+    QTransform GetTransform() const;
+    void SetTransparent(int transparent);
+    int GetTransparent() const;
+
 protected:
 	void paintEvent(QPaintEvent *);
 	void mousePressEvent(QMouseEvent*);
 	void mouseMoveEvent(QMouseEvent*);
 	void mouseDoubleClickEvent(QMouseEvent*);
+    void resizeEvent(QResizeEvent*);
+
 private:
     QPoint m_mouseAnchor; /**< used to keep track of the last mouse click location.*/
     QTimer* m_timer;
@@ -76,6 +85,9 @@ private:
     QPointF m_destination; /**< used for dblclick+zoom animations */
     float m_minDistance = 0.025; /**< used to identify the end of the animation*/
     float m_animRate = 0.5;
+
+    GeoFrame m_geoFrame;
+    int m_transparent = 50;
 protected slots:
 	void zoomAnim();
     void updateZoom(int);

@@ -11,23 +11,79 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 */
+#include <QFileDialog>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
 #include "mainwidget.h"
 
 ///
-/// \brief testWidget::testWidget
+/// \brief MainWidget::testWidget
 /// \param parent
 ///
-MainWidget::MainWidget(QWidget* parent)
-    : QWidget(parent)
+MainWidget::MainWidget(QWidget* parent, Qt::WindowFlags flags)
+    : QMainWindow(parent, flags)
 {
+    setWindowTitle(m_applicationName);
+
+    Qt::WindowFlags wflags = windowFlags();
+    wflags |= Qt::WindowSystemMenuHint | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint;
+    wflags &= ~Qt::WindowContextHelpButtonHint | Qt::MSWindowsFixedSizeDialogHint;
+    setWindowFlags(wflags);
+
+    const QScreen* screen = QGuiApplication::primaryScreen();
+    QRect gRect = QRect(0, 0, 3 * screen->size().width() / 4, 3 * screen->size().height() / 4);
+    gRect.moveCenter(screen->geometry().center());
+    setGeometry(gRect);
+    setMinimumSize(1280, 720);
+
+    m_vlayout = new QVBoxLayout();
+    QWidget *w = new QWidget();
+    w->setLayout(m_vlayout);
+    setCentralWidget(w);
+
+    QMenu* mnu = menuBar()->addMenu(QString::fromLocal8Bit("File"));
+    QAction* newAct = mnu->addAction(QString::fromLocal8Bit("New project"), this, SLOT(NewProject()));
+    newAct->setShortcuts(QKeySequence::New);
+    QAction* openAct = mnu->addAction(QString::fromLocal8Bit("Open project"), this, SLOT(OpenProject()));
+    openAct->setShortcuts(QKeySequence::Open);
+    QAction* saveAsAct = mnu->addAction(QString::fromLocal8Bit("Save project"), this, SLOT(SaveProject()));
+    saveAsAct->setShortcuts(QKeySequence::Save);
+    mnu->addSeparator();
+    QAction* exitAct = mnu->addAction(QString::fromLocal8Bit("Exit"), this, SLOT(close()));
+    exitAct->setShortcuts(QKeySequence::Quit);
+
     m_map = new myDerivedMap(this);
 
-    m_vlayout = new QVBoxLayout(this);
     m_combo = new QComboBox(this);
     populateCombo();
+    m_combo->setCurrentIndex(m_map->getServer());
     m_vlayout->addWidget(m_combo);
-
     connect(m_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(setServer(int)));
+
+    m_hSelectLayout = new QHBoxLayout(this);
+    m_selectedFrame = new QLineEdit(this);
+    m_selectedFrame->setPlaceholderText("Sceenshot or video file from camera");
+    m_selectedFrame->setReadOnly(true);
+    m_selectFrame = new QPushButton(this);
+    m_selectFrame->setText("...");
+    m_selectFrame->setToolTip("Select sceenshot or video file from camera");
+    connect(m_selectFrame, SIGNAL(clicked(bool)), this, SLOT(selectFileClick(bool)));
+    m_hSelectLayout->addWidget(m_selectedFrame);
+    m_hSelectLayout->addWidget(m_selectFrame);
+    m_vlayout->addLayout(m_hSelectLayout);
+
+    m_hTransparentLayout = new QHBoxLayout(this);
+    m_transparentLabel = new QLabel(this);
+    m_transparentLabel->setText("Transparent: " + QString::number(m_map->GetTransparent()));
+    m_transparentSlider = new QSlider(Qt::Horizontal, this);
+    m_transparentSlider->setTickPosition(QSlider::TicksBothSides);
+    m_transparentSlider->setRange(1, 100);
+    m_transparentSlider->setSliderPosition(m_map->GetTransparent());
+    connect(m_transparentSlider, SIGNAL(valueChanged(int)), this, SLOT(updateTransparent(int)));
+    m_hTransparentLayout->addWidget(m_transparentLabel);
+    m_hTransparentLayout->addWidget(m_transparentSlider);
+    m_vlayout->addLayout(m_hTransparentLayout);
 
     m_vlayout->addWidget(m_map);
 
@@ -73,18 +129,13 @@ MainWidget::MainWidget(QWidget* parent)
     connect(m_statusLatitudeEdit, SIGNAL(editingFinished()), this, SLOT(updateGeoCoors()));
     connect(m_statusLongitudeEdit, SIGNAL(editingFinished()), this, SLOT(updateGeoCoors()));
     connect(m_map, SIGNAL(updateParams()), this, SLOT(updateEdits()));
+    connect(this, SIGNAL(updateZoom(int)), m_map, SLOT(updateZoom(int)));
 
     setLayout(m_vlayout);
-
-    QSize size(1280, 720);
-    resize(size);
-
-    setWindowModality(Qt::WindowModal);
-    m_statusZoomEdit->activateWindow();
 }
 
 ///
-/// \brief testWidget::showEvent
+/// \brief MainWidget::showEvent
 /// \param showEvent
 ///
 void MainWidget::showEvent(QShowEvent* showEvent)
@@ -94,7 +145,86 @@ void MainWidget::showEvent(QShowEvent* showEvent)
 }
 
 ///
-/// \brief testWidget::GenStatus
+/// \brief MainWidget::ApplyProject
+/// \param projectSettings
+///
+void MainWidget::ApplyProject(const ProjectSettings& projectSettings)
+{
+    m_map->setZoom(projectSettings.m_zoom);
+    m_map->setGeoCoords(QPointF(projectSettings.m_longitude, projectSettings.m_latitude), true);
+    genStatus(true);
+
+    bool res = m_map->AddFrame(projectSettings.m_frameFileName, projectSettings.m_frameTransform);
+    m_selectedFrame->setText(projectSettings.m_frameFileName);
+    QString statusMessage = QString::asprintf("File %s is opened %s", projectSettings.m_frameFileName.toStdString().c_str(), res ? "" : "with error");
+    m_statusBar->showMessage(statusMessage, 10000);
+}
+
+///
+/// \brief MainWidget::NewProject
+///
+void MainWidget::NewProject()
+{
+    ProjectSettings projectSettings;
+    ApplyProject(projectSettings);
+}
+
+///
+/// \brief MainWidget::OpenProject
+///
+void MainWidget::OpenProject()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open project"), "...", tr("Xml Files (*.xml)"));
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+    if (!file.open(QFile::ReadOnly | QFile::Text))
+    {
+        QMessageBox::warning(this, m_applicationName, tr("Cannot read file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
+        return;
+    }
+
+    ProjectSettings projectSettings;
+    if (projectSettings.Read(&file))
+    {
+        QMessageBox::warning(this, m_applicationName, tr("Parse error in file %1:\n\n%2").arg(QDir::toNativeSeparators(fileName), projectSettings.ReadError()));
+    }
+    else
+    {
+        statusBar()->showMessage(tr("Project loaded from ") + fileName, 10000);
+        ApplyProject(projectSettings);
+    }
+}
+
+///
+/// \brief MainWidget::SaveProject
+///
+void MainWidget::SaveProject()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save current project"), "..."/*QDir::currentPath()*/, tr("Xml Files (*.xml)"));
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text))
+    {
+        QMessageBox::warning(this, m_applicationName, tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
+        return;
+    }
+
+    ProjectSettings projectSettings;
+    projectSettings.m_zoom = m_map->getZoom();
+    auto geoCoords = m_map->getGeoCoords();
+    projectSettings.m_latitude = geoCoords.y();
+    projectSettings.m_longitude = geoCoords.x();
+    projectSettings.m_frameFileName = m_selectedFrame->text();
+    projectSettings.m_frameTransform = m_map->GetTransform();
+    projectSettings.Write(&file);
+}
+
+///
+/// \brief MainWidget::GenStatus
 /// \return
 ///
 void MainWidget::genStatus(bool fillEdits)
@@ -108,12 +238,12 @@ void MainWidget::genStatus(bool fillEdits)
     }
 #if !USE_ONLY_STATUS
     QString res = QString::asprintf("zoom %d, latitude %.6f, longitude %.6f", m_map->getZoom(), geoCoords.y(), geoCoords.x());
-    m_statusBar->showMessage(res);
+    m_statusBar->showMessage(res, 10000);
 #endif
 }
 
 ///
-/// \brief testWidget::updateEdits
+/// \brief MainWidget::updateEdits
 ///
 void MainWidget::updateEdits()
 {
@@ -121,7 +251,21 @@ void MainWidget::updateEdits()
 }
 
 ///
-/// \brief testWidget::populateCombo
+/// \brief MainWidget::selectFileClick
+/// \param checked
+///
+void MainWidget::selectFileClick(bool /*checked*/)
+{
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open image or video"), "...", tr("Files (*.png *.jpg *.bmp, *avi, *.mp4)"));
+    bool res = m_map->AddFrame(fileName, QTransform());
+    if (res)
+        m_selectedFrame->setText(fileName);
+    QString statusMessage = QString::asprintf("File %s is opened %s", fileName.toStdString().c_str(), res ? "" : "with error");
+    m_statusBar->showMessage(statusMessage, 10000);
+}
+
+///
+/// \brief MainWidget::populateCombo
 ///
 void MainWidget::populateCombo()
 {
@@ -134,7 +278,7 @@ void MainWidget::populateCombo()
 }
 
 ///
-/// \brief testWidget::paintEvent
+/// \brief MainWidget::paintEvent
 ///
 void MainWidget::paintEvent(QPaintEvent*)
 {
@@ -142,16 +286,7 @@ void MainWidget::paintEvent(QPaintEvent*)
 }
 
 ///
-/// \brief testWidget::~testWidget
-///
-MainWidget::~MainWidget()
-{
-    delete m_map;
-    delete m_vlayout;
-}
-
-///
-/// \brief testWidget::setServer
+/// \brief MainWidget::setServer
 /// \param index
 ///
 void MainWidget::setServer(int index)
@@ -161,22 +296,31 @@ void MainWidget::setServer(int index)
 }
 
 ///
-/// \brief testWidget::updateZoom
+/// \brief MainWidget::updateZoom
 ///
 void MainWidget::updateZoom()
 {
     int zoom = m_statusZoomEdit->text().toInt();
-    m_map->setZoom(zoom);
+    emit updateZoom(zoom);
 }
 
 ///
-/// \brief testWidget::updateGeoCoors
+/// \brief MainWidget::updateGeoCoors
 ///
 void MainWidget::updateGeoCoors()
 {
     QPointF geoCoords;
     geoCoords.setY(m_statusLatitudeEdit->text().toDouble());
     geoCoords.setX(m_statusLongitudeEdit->text().toDouble());
-    std::cout << "updateGeoCoors: " << geoCoords.y() << ", " << geoCoords.x() << std::endl;
     m_map->setGeoCoords(geoCoords, true);
+}
+
+///
+/// \brief MainWidget::updateTransparent
+/// \param transparent
+///
+void MainWidget::updateTransparent(int transparent)
+{
+    m_transparentLabel->setText("Transparent: " + QString::number(transparent));
+    m_map->SetTransparent(transparent);
 }

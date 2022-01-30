@@ -1,52 +1,61 @@
 #pragma once
 
-/*
-Copyright 2010 Jean Fairlie jmfairlie@gmail.com
-
-This program  is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-*/
-
+#include <iostream>
+#include <QMainWindow>
 #include <QtGui>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QPushButton>
 #include "myderivedmap.h"
-#include <iostream>
+#include "ProjectSettings.h"
 
-#define USE_ONLY_STATUS 1
+#define USE_ONLY_STATUS 0
 
-class MainWidget: public QWidget
+///
+/// \brief The MainWidget class
+///
+class MainWidget: public QMainWindow
 {
 Q_OBJECT
 public:
-    MainWidget(QWidget* parent=0);
-    ~MainWidget();
+    MainWidget(QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
+    ~MainWidget() = default;
+
+Q_SIGNALS:
+    void updateZoom(int);
+
 private:
 	void populateCombo();
 
-    myDerivedMap* m_map;
-    QVBoxLayout* m_vlayout;
+    QString m_applicationName = QString::fromLocal8Bit("FrameBinder");
 
-    QComboBox* m_combo;
+    myDerivedMap* m_map = nullptr;
+    QVBoxLayout* m_vlayout = nullptr;
+
+    QComboBox* m_combo = nullptr;
+
+    QHBoxLayout* m_hSelectLayout = nullptr;
+    QPushButton* m_selectFrame = nullptr;
+    QLineEdit* m_selectedFrame = nullptr;
+
+    QHBoxLayout* m_hTransparentLayout = nullptr;
+    QLabel* m_transparentLabel = nullptr;
+    QSlider* m_transparentSlider = nullptr;
+
 #if !USE_ONLY_STATUS
-    QHBoxLayout* m_hlayout;
+    QHBoxLayout* m_hlayout = nullptr;
 #endif
-    QStatusBar* m_statusBar;
-    QLabel* m_statusZoomLabel;
-    QLineEdit* m_statusZoomEdit;
-    QLabel* m_statusLatitudeLabel;
-    QLineEdit* m_statusLatitudeEdit;
-    QLabel* m_statusLongitudeLabel;
-    QLineEdit* m_statusLongitudeEdit;
+    QStatusBar* m_statusBar = nullptr;
+    QLabel* m_statusZoomLabel = nullptr;
+    QLineEdit* m_statusZoomEdit = nullptr;
+    QLabel* m_statusLatitudeLabel = nullptr;
+    QLineEdit* m_statusLatitudeEdit = nullptr;
+    QLabel* m_statusLongitudeLabel = nullptr;
+    QLineEdit* m_statusLongitudeEdit = nullptr;
+
+    void ApplyProject(const ProjectSettings& projectSettings);
 
 protected:
 	void paintEvent(QPaintEvent*);
@@ -56,6 +65,11 @@ private slots:
     void updateZoom();
     void updateGeoCoors();
     void updateEdits();
+    void selectFileClick(bool checked);
+    void updateTransparent(int transparent);
+    void NewProject();
+    void OpenProject();
+    void SaveProject();
 
     void showEvent(QShowEvent* showEvent);
 };

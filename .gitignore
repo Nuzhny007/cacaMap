@@ -19,3 +19,4 @@ latex
 Makefile
 #experimental tile server file
 tileservers2.xml
+*.user

@@ -32,6 +32,46 @@ myDerivedMap::~myDerivedMap()
     delete m_hlayout;
 }
 
+///
+/// \brief myDerivedMap::AddFrame
+/// \param img
+/// \param transform
+///
+bool myDerivedMap::AddFrame(const QString& pathTofile, QTransform transform)
+{
+    bool res = m_geoFrame.AddFrame(pathTofile, size(), zoom, tileSize, getGeoCoords());
+    update();
+    return res;
+}
+
+///
+/// \brief myDerivedMap::GetTransform
+/// \return
+///
+QTransform myDerivedMap::GetTransform() const
+{
+    return QTransform();
+}
+
+///
+/// \brief myDerivedMap::SetTransparent
+/// \param transparent
+///
+void myDerivedMap::SetTransparent(int transparent)
+{
+    m_transparent = transparent;
+    update();
+}
+
+///
+/// \brief myDerivedMap::GetTransparent
+/// \return
+///
+int myDerivedMap::GetTransparent() const
+{
+   return m_transparent;
+}
+
 /**
 Saves the screen coordinates of the last click
 This is used for scrolling the map
@@ -52,13 +92,20 @@ void myDerivedMap::mouseMoveEvent(QMouseEvent* e)
     m_mouseAnchor = e->pos();
     longPoint p = myMercator::geoCoordToPixel(getGeoCoords(), zoom, tileSize);
 	
-	p.x-= delta.x();
-	p.y-= delta.y();
+    p.x -= delta.x();
+    p.y -= delta.y();
     setGeoCoords(myMercator::pixelToGeoCoord(p, zoom, tileSize), true);
+
+    m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
+
 	updateContent();
 	update();
 }
 
+///
+/// \brief myDerivedMap::mouseDoubleClickEvent
+/// \param e
+///
 void myDerivedMap::mouseDoubleClickEvent(QMouseEvent* e)
 {
 	//do the zoom-in animation magic
@@ -77,11 +124,15 @@ void myDerivedMap::mouseDoubleClickEvent(QMouseEvent* e)
 	else if (e->button() == Qt::RightButton)
 	{
 		zoomOut();
+        m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
         m_slider->setSliderPosition(zoom);
 		update();
 	}
 }
 
+///
+/// \brief myDerivedMap::zoomAnim
+///
 void myDerivedMap::zoomAnim()
 {
 	float delta = buffzoomrate - 0.5;
@@ -100,18 +151,47 @@ void myDerivedMap::zoomAnim()
         setGeoCoords(m_destination, true);
 		buffzoomrate = 1.0;
 		zoomIn();
+        m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
         m_slider->setSliderPosition(zoom);
 	}
 	update();
 }
 
+///
+/// \brief myDerivedMap::updateZoom
+/// \param newZoom
+///
 void myDerivedMap::updateZoom(int newZoom)
 {
 	setZoom(newZoom);
+    m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
 	update();
 }
 
+///
+/// \brief myDerivedMap::paintEvent
+/// \param e
+///
 void myDerivedMap::paintEvent(QPaintEvent *e)
 {
 	cacaMap::paintEvent(e);
+
+    if (!m_geoFrame.GetPixmap().isNull())
+    {
+        QPainter p(this);
+        auto currOpacity = p.opacity();
+        p.setOpacity(0.01 * m_transparent);
+        p.drawPixmap(m_geoFrame.GetdX(), m_geoFrame.GetdY(), m_geoFrame.GetPixmap());
+        p.setOpacity(currOpacity);
+    }
+}
+
+/**
+Widget resize event handler
+*/
+void myDerivedMap::resizeEvent(QResizeEvent* event)
+{
+    m_geoFrame.SetNewMapSize(size());
+    m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
+    cacaMap::resizeEvent(event);
 }

@@ -93,7 +93,8 @@ Sets the latitude and longitude to the coords in newcoords
 void cacaMap::setGeoCoords(QPointF newcoords, bool userInput)
 {
 	geocoords = newcoords;
-    updateContent();
+    if (!userInput)
+        updateContent();
     if (userInput)
         emit updateParams();
 }
@@ -154,6 +155,7 @@ QPointF cacaMap::getGeoCoords() const
 {
 	return geocoords;
 }
+
 /**
 *@return list of available tile server names
 */
@@ -161,6 +163,7 @@ QStringList cacaMap::getServerNames() const
 {
 	return servermgr.getServerNames();		
 }
+
 /**
 * Change tile server to the one in index
 */
@@ -172,6 +175,14 @@ void cacaMap::setServer(int index)
 	downloading = false;
 	updateContent();
 	update();
+}
+
+/**
+* Get current tile server
+*/
+int cacaMap::getServer() const
+{
+    return servermgr.serverIndex();
 }
 
 /**
@@ -573,7 +584,7 @@ void cacaMap::updateBuffer()
 					//render the tile
 					QDir::setCurrent(folder);
 					//check path format (windows?)
-					QString path= getTilePath(tilesToRender.zoom,valx) ;
+                    QString path= getTilePath(tilesToRender.zoom,valx);
 					QString fileName = servermgr.fileName(j);
 					QDir::setCurrent(path);
 					QFile f(fileName);

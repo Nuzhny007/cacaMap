@@ -35,11 +35,12 @@ public:
 	QString fileName(quint32);
 	void selectServer(int);
     QString serverName() const;
+    int serverIndex() const;
     QString filePath(int, quint32) const;
     QStringList getServerNames() const;
 
 private:
     QVector<tileserver> serverlist; /**< list of server structs*/
-    int selectedServer;             /**< index in list of current server*/
+    int selectedServer = 0;         /**< index in list of current server*/
     QStringList serverNames;        /**< names of servers in xml file*/
 };
