@@ -64,8 +64,8 @@ public:
 	myDerivedMap(QWidget* _parent=0);
     ~myDerivedMap();
 
-    bool AddFrame(const QString& pathTofile, QTransform transform);
-    QTransform GetTransform() const;
+    bool AddFrame(const QString& pathTofile, const QPolygonF& frameGeoPoints);
+    QPolygonF GetFrameGeoPoints() const;
     void SetTransparent(int transparent);
     int GetTransparent() const;
 
@@ -78,6 +78,7 @@ protected:
 
 private:
     QPoint m_mouseAnchor; /**< used to keep track of the last mouse click location.*/
+    bool m_moveMap = false;
     QTimer* m_timer;
     QHBoxLayout* m_hlayout;
 	

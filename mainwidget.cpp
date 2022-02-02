@@ -154,7 +154,7 @@ void MainWidget::ApplyProject(const ProjectSettings& projectSettings)
     m_map->setGeoCoords(QPointF(projectSettings.m_longitude, projectSettings.m_latitude), true);
     genStatus(true);
 
-    bool res = m_map->AddFrame(projectSettings.m_frameFileName, projectSettings.m_frameTransform);
+    bool res = m_map->AddFrame(projectSettings.m_frameFileName, projectSettings.m_frameGeoPoints);
     m_selectedFrame->setText(projectSettings.m_frameFileName);
     QString statusMessage = QString::asprintf("File %s is opened %s", projectSettings.m_frameFileName.toStdString().c_str(), res ? "" : "with error");
     m_statusBar->showMessage(statusMessage, 10000);
@@ -219,7 +219,7 @@ void MainWidget::SaveProject()
     projectSettings.m_latitude = geoCoords.y();
     projectSettings.m_longitude = geoCoords.x();
     projectSettings.m_frameFileName = m_selectedFrame->text();
-    projectSettings.m_frameTransform = m_map->GetTransform();
+    projectSettings.m_frameGeoPoints = m_map->GetFrameGeoPoints();
     projectSettings.Write(&file);
 }
 
@@ -257,7 +257,7 @@ void MainWidget::updateEdits()
 void MainWidget::selectFileClick(bool /*checked*/)
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open image or video"), "...", tr("Files (*.png *.jpg *.bmp, *avi, *.mp4)"));
-    bool res = m_map->AddFrame(fileName, QTransform());
+    bool res = m_map->AddFrame(fileName, QPolygonF());
     if (res)
         m_selectedFrame->setText(fileName);
     QString statusMessage = QString::asprintf("File %s is opened %s", fileName.toStdString().c_str(), res ? "" : "with error");

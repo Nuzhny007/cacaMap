@@ -1,6 +1,10 @@
 #pragma once
 
 #include <iostream>
+#include <QString>
+#include <QPolygonF>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
 ///
 /// \brief The ProjectSettings class
@@ -12,15 +16,24 @@ public:
     double m_longitude = 30.0;
     int m_zoom = 18;
     QString m_frameFileName;
-    QTransform m_frameTransform;
+    QPolygonF m_frameGeoPoints;
 
     QXmlStreamReader m_readXml;
 
+    ///
+    /// \brief versionAttribute
+    /// \return
+    ///
     static inline QString versionAttribute()
     {
         return QStringLiteral("version");
     }
 
+    ///
+    /// \brief Read
+    /// \param device
+    /// \return
+    ///
     bool Read(QIODevice* device)
     {
         m_readXml.setDevice(device);
@@ -57,6 +70,14 @@ public:
                         m_frameFileName = m_readXml.attributes().value(QStringLiteral("val")).toString();
                         readedName = "File name: " + m_frameFileName;
                     }
+                    else if (m_readXml.name() == QLatin1String("geo_point"))
+                    {
+                        QPointF geoPt;
+                        geoPt.setY(m_readXml.attributes().value(QStringLiteral("lat")).toDouble());
+                        geoPt.setX(m_readXml.attributes().value(QStringLiteral("lon")).toDouble());
+                        m_frameGeoPoints.push_back(geoPt);
+                        readedName = "Geo point[" + QString::number(m_frameGeoPoints.size() - 1) + "]: lat = " + QString::number(geoPt.x()) + ", lon = " + QString::number(geoPt.y());
+                    }
                     m_readXml.skipCurrentElement();
 
                     std::cout << "Readed " << readedName.toStdString() << std::endl;
@@ -72,6 +93,10 @@ public:
         return !m_readXml.error();
     }
 
+    ///
+    /// \brief ReadError
+    /// \return
+    ///
     QString ReadError() const
     {
         return QObject::tr("%1\nLine %2, column %3")
@@ -80,6 +105,11 @@ public:
                 .arg(m_readXml.columnNumber());
     }
 
+    ///
+    /// \brief Write
+    /// \param device
+    /// \return
+    ///
     bool Write(QIODevice* device)
     {
         QXmlStreamWriter writeXml;
@@ -106,6 +136,14 @@ public:
         writeXml.writeStartElement("file_name");
         writeXml.writeAttribute("val", m_frameFileName);
         writeXml.writeEndElement();
+
+        for (auto geoPt : m_frameGeoPoints)
+        {
+            writeXml.writeStartElement("geo_point");
+            writeXml.writeAttribute("lat", QString::number(geoPt.y(), 'g', 9));
+            writeXml.writeAttribute("lon", QString::number(geoPt.x(), 'g', 10));
+            writeXml.writeEndElement();
+        }
 
         writeXml.writeEndDocument();
         return true;

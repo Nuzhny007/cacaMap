@@ -37,20 +37,20 @@ myDerivedMap::~myDerivedMap()
 /// \param img
 /// \param transform
 ///
-bool myDerivedMap::AddFrame(const QString& pathTofile, QTransform transform)
+bool myDerivedMap::AddFrame(const QString& pathTofile, const QPolygonF& frameGeoPoints)
 {
-    bool res = m_geoFrame.AddFrame(pathTofile, size(), zoom, tileSize, getGeoCoords());
+    bool res = m_geoFrame.AddFrame(pathTofile, frameGeoPoints, size(), zoom, tileSize, getGeoCoords());
     update();
     return res;
 }
 
 ///
-/// \brief myDerivedMap::GetTransform
+/// \brief myDerivedMap::GetFrameGeoPoints
 /// \return
 ///
-QTransform myDerivedMap::GetTransform() const
+QPolygonF myDerivedMap::GetFrameGeoPoints() const
 {
-    return QTransform();
+    return m_geoFrame.GetFrameGeoPoints();
 }
 
 ///
@@ -79,7 +79,9 @@ This is used for scrolling the map
 */
 void myDerivedMap::mousePressEvent(QMouseEvent* e)
 {
-    m_mouseAnchor = e->pos();
+    m_moveMap = !m_geoFrame.IsInFrame(e->pos());
+    if (m_moveMap)
+        m_mouseAnchor = e->pos();
 }
 
 /**
@@ -88,15 +90,23 @@ translates it into a new coordinate, map is rerendered
 */
 void myDerivedMap::mouseMoveEvent(QMouseEvent* e)
 {
-    QPoint delta = e->pos() - m_mouseAnchor;
-    m_mouseAnchor = e->pos();
-    longPoint p = myMercator::geoCoordToPixel(getGeoCoords(), zoom, tileSize);
-	
-    p.x -= delta.x();
-    p.y -= delta.y();
-    setGeoCoords(myMercator::pixelToGeoCoord(p, zoom, tileSize), true);
+    if (m_moveMap)
+    {
+        QPoint delta = e->pos() - m_mouseAnchor;
+        m_mouseAnchor = e->pos();
+        longPoint p = myMercator::geoCoordToPixel(getGeoCoords(), zoom, tileSize);
 
-    m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
+        p.x -= delta.x();
+        p.y -= delta.y();
+        setGeoCoords(myMercator::pixelToGeoCoord(p, zoom, tileSize), true);
+
+        m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
+    }
+    else
+    {
+        if (m_geoFrame.MouseMove(e->pos(), zoom, tileSize))
+            m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
+    }
 
 	updateContent();
 	update();
@@ -181,7 +191,10 @@ void myDerivedMap::paintEvent(QPaintEvent *e)
         QPainter p(this);
         auto currOpacity = p.opacity();
         p.setOpacity(0.01 * m_transparent);
-        p.drawPixmap(m_geoFrame.GetdX(), m_geoFrame.GetdY(), m_geoFrame.GetPixmap());
+        auto currTransform = p.transform();
+        p.setTransform(m_geoFrame.GetTransform());
+        p.drawPixmap(0, 0, m_geoFrame.GetPixmap());
+        p.setTransform(currTransform);
         p.setOpacity(currOpacity);
     }
 }

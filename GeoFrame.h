@@ -10,23 +10,37 @@ class GeoFrame
 public:
     GeoFrame() = default;
 
+    ///
+    /// \brief SetNewMapSize
+    /// \param mapSize
+    ///
     void SetNewMapSize(QSize mapSize)
     {
         m_mapSize = mapSize;
     }
 
-    bool AddFrame(const QString& pathTofile, QSize mapSize, int zoom, int tileSize, QPointF geoCenter)
+    ///
+    /// \brief AddFrame
+    /// \param pathTofile
+    /// \param frameGeoPoints
+    /// \param mapSize
+    /// \param zoom
+    /// \param tileSize
+    /// \param geoCenter
+    /// \return
+    ///
+    bool AddFrame(const QString& pathTofile, const QPolygonF& frameGeoPoints, QSize mapSize, int zoom, int tileSize, QPointF geoCenter)
     {
         m_mapSize = mapSize;
-        m_mapGeoCoords = QPolygonF({ myMercator::pixelToGeoCoord(longPoint(0, 0), zoom, tileSize),
-                                     myMercator::pixelToGeoCoord(longPoint(mapSize.width(), 0), zoom, tileSize),
-                                     myMercator::pixelToGeoCoord(longPoint(mapSize.width(), mapSize.height()), zoom, tileSize),
-                                     myMercator::pixelToGeoCoord(longPoint(0, mapSize.height()), zoom, tileSize)});
 
-        m_transformedImg = QPixmap();
         m_img.load(pathTofile);
+        if (m_img.isNull())
+        {
+            std::cout << "Can not load frame from " << pathTofile.toStdString() << std::endl;
+            return false;
+        }
 
-        if (!m_img.isNull())
+        if (frameGeoPoints.empty())
         {
             QRectF fromRect(0, 0, m_img.width(), m_img.height());
             QPolygonF fromPoly(fromRect);
@@ -37,8 +51,6 @@ public:
             bool res = QTransform::quadToQuad(fromPoly, toPoly, m_transform);
             if (res)
             {
-                m_transformedImg = m_img.transformed(m_transform);
-
                 longPoint pixCenter(mapSize.width() / 2, mapSize.height() / 2);
                 longPoint pix = myMercator::geoCoordToPixel(geoCenter, zoom, tileSize);
                 auto Pix2Lp = [pixCenter, pix](int x, int y)
@@ -50,26 +62,34 @@ public:
                                              myMercator::pixelToGeoCoord(Pix2Lp(toRect.right(), toRect.y()), zoom, tileSize),
                                              myMercator::pixelToGeoCoord(Pix2Lp(toRect.right(), toRect.bottom()), zoom, tileSize),
                                              myMercator::pixelToGeoCoord(Pix2Lp(toRect.x(), toRect.bottom()), zoom, tileSize)});
-#if 0
-                std::cout << "'AddFrame: m_imgGeoCoords: ";
-                for (int i = 0; i < m_imgGeoCoords.count(); ++i)
-                {
-                    std::cout << "(" << m_imgGeoCoords.at(i).x() << ", " << m_imgGeoCoords.at(i).y() << ") ";
-                }
-                std::cout << std::endl;
-#endif
             }
-            else
-                m_transformedImg = m_img;
-#if 0
-            std::cout << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
-                      << "(" << m_transform.m21() << ", " << m_transform.m22() << ", " << m_transform.m23() << "), "
-                      << "(" << m_transform.m31() << ", " << m_transform.m32() << ", " << m_transform.m33() << ")]" << std::endl;
-#endif
         }
-        return !m_img.isNull();
+        else
+        {
+            m_imgGeoCoords = frameGeoPoints;
+            RecalcCoords(zoom, tileSize, geoCenter);
+        }
+#if 0
+        std::cout << "'AddFrame: m_imgGeoCoords: ";
+        for (int i = 0; i < m_imgGeoCoords.count(); ++i)
+        {
+            std::cout << "(" << m_imgGeoCoords.at(i).x() << ", " << m_imgGeoCoords.at(i).y() << ") ";
+        }
+        std::cout << std::endl;
+        std::cout << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
+                  << "(" << m_transform.m21() << ", " << m_transform.m22() << ", " << m_transform.m23() << "), "
+                  << "(" << m_transform.m31() << ", " << m_transform.m32() << ", " << m_transform.m33() << ")]" << std::endl;
+#endif
+
+        return true;
     }
 
+    ///
+    /// \brief RecalcCoords
+    /// \param zoom
+    /// \param tileSize
+    /// \param geoCenter
+    ///
     void RecalcCoords(int zoom, int tileSize, QPointF geoCenter)
     {
         if (m_img.isNull())
@@ -107,10 +127,6 @@ public:
 #endif
 
         bool res = QTransform::quadToQuad(fromPoly, toPoly, m_transform);
-        if (res)
-            m_transformedImg = m_img.transformed(m_transform);
-        else
-            m_transformedImg = m_img;
 #if 0
         std::cout << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
                   << "(" << m_transform.m21() << ", " << m_transform.m22() << ", " << m_transform.m23() << "), "
@@ -118,27 +134,133 @@ public:
 #endif
     }
 
+    ///
+    /// \brief GetdX
+    /// \return
+    ///
     int GetdX() const
     {
-        return m_transform.m31();
+        //return m_transform.m31();
+        return m_transform.map(QPoint(0, 0)).x();
     }
-
+    ///
+    /// \brief GetdY
+    /// \return
+    ///
     int GetdY() const
     {
-        return m_transform.m32();
+        //return m_transform.m32();
+        return m_transform.map(QPoint(0, 0)).y();
     }
-
+    ///
+    /// \brief GetPixmap
+    /// \return
+    ///
     const QPixmap& GetPixmap() const
     {
-        return m_transformedImg;
+        return m_img;
+    }
+    ///
+    /// \brief GetTransform
+    /// \return
+    ///
+    const QTransform& GetTransform() const
+    {
+        return m_transform;
+    }
+    ///
+    /// \brief GetFrameGeoPoints
+    /// \return
+    ///
+    QPolygonF GetFrameGeoPoints() const
+    {
+       return m_imgGeoCoords;
+    }
+
+    ///
+    /// \brief IsInFrame
+    /// \param pt
+    /// \return
+    ///
+    bool IsInFrame(QPoint pt)
+    {
+        QRectF imgRect(0, 0, m_img.width(), m_img.height());
+        QPolygonF imgPoly(imgRect);
+        QPolygonF imgOnMapPoly = m_transform.map(imgPoly);
+
+        m_vertexIndex = -1;
+        for (int i = 0; i < imgOnMapPoly.size(); ++i)
+        {
+            auto vertex = imgOnMapPoly.at(i);
+            QRectF vertexRect(vertex.x() - m_vertexRadius, vertex.y() - m_vertexRadius, 2 * m_vertexRadius, 2 * m_vertexRadius);
+            if (vertexRect.contains(pt))
+            {
+                m_vertexIndex = i;
+                break;
+            }
+        }
+
+        bool res = m_vertexIndex >= 0;
+        if (!res)
+            res = imgOnMapPoly.containsPoint(pt, Qt::OddEvenFill);
+
+        if (res)
+            m_mouseAnchor = pt;
+
+#if 0
+        std::cout << "IsInFrame: pt = (" << pt.x() << ", " << pt.y() << ") is in Frame: " << res << ", imgOnMapPoly: ";
+        for (int i = 0; i < imgOnMapPoly.count(); ++i)
+        {
+            std::cout << "(" << imgOnMapPoly.at(i).x() << ", " << imgOnMapPoly.at(i).y() << ") ";
+        }
+        std::cout << std::endl;
+#endif
+
+        return res;
+    }
+
+    ///
+    /// \brief MouseMove
+    /// \param pt
+    /// \param zoom
+    /// \param tileSize
+    /// \return
+    ///
+    bool MouseMove(QPoint pt, int zoom, int tileSize)
+    {
+        QPoint delta = pt - m_mouseAnchor;
+        m_mouseAnchor = pt;
+
+        if (m_vertexIndex >= 0)
+        {
+                longPoint p = myMercator::geoCoordToPixel(m_imgGeoCoords.at(m_vertexIndex), zoom, tileSize);
+                p.x += delta.x();
+                p.y += delta.y();
+                m_imgGeoCoords[m_vertexIndex] = myMercator::pixelToGeoCoord(p, zoom, tileSize);
+        }
+        else
+        {
+            for (QPointF& geoPt : m_imgGeoCoords)
+            {
+                longPoint p = myMercator::geoCoordToPixel(geoPt, zoom, tileSize);
+                p.x += delta.x();
+                p.y += delta.y();
+                geoPt = myMercator::pixelToGeoCoord(p, zoom, tileSize);
+            }
+        }
+
+        return true;
     }
 
 private:
     QPixmap m_img;
-    QPixmap m_transformedImg;
     QTransform m_transform;
 
     QSize m_mapSize;
-    QPolygonF m_mapGeoCoords;
     QPolygonF m_imgGeoCoords;
+
+    QPoint m_mouseAnchor;
+    int m_vertexIndex = -1;
+
+    static constexpr int m_vertexRadius = 20;
 };
