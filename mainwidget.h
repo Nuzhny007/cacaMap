@@ -8,6 +8,7 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QTableWidget>
 #include "myderivedmap.h"
 #include "ProjectSettings.h"
 
@@ -33,6 +34,12 @@ private:
 
     myDerivedMap* m_map = nullptr;
     QVBoxLayout* m_vlayout = nullptr;
+
+    QHBoxLayout* m_hMainLayout = nullptr;
+
+    QVBoxLayout* m_vPointsLayout = nullptr;
+    QTableWidget* m_frameMapTable = nullptr;
+    QLabel* m_frameToMapLabel = nullptr;
 
     QComboBox* m_combo = nullptr;
 
@@ -70,6 +77,7 @@ private slots:
     void NewProject();
     void OpenProject();
     void SaveProject();
+    void NewFrameGeoCoords(const QPolygonF& geoCoords);
 
     void showEvent(QShowEvent* showEvent);
 };

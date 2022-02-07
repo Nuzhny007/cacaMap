@@ -40,6 +40,7 @@ myDerivedMap::~myDerivedMap()
 bool myDerivedMap::AddFrame(const QString& pathTofile, const QPolygonF& frameGeoPoints)
 {
     bool res = m_geoFrame.AddFrame(pathTofile, frameGeoPoints, size(), zoom, tileSize, getGeoCoords());
+    emit NewFrameGeoCoords(m_geoFrame.GetFrameGeoPoints());
     update();
     return res;
 }
@@ -101,11 +102,15 @@ void myDerivedMap::mouseMoveEvent(QMouseEvent* e)
         setGeoCoords(myMercator::pixelToGeoCoord(p, zoom, tileSize), true);
 
         m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
+        emit NewFrameGeoCoords(m_geoFrame.GetFrameGeoPoints());
     }
     else
     {
         if (m_geoFrame.MouseMove(e->pos(), zoom, tileSize))
+        {
             m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
+            emit NewFrameGeoCoords(m_geoFrame.GetFrameGeoPoints());
+        }
     }
 
 	updateContent();

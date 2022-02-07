@@ -15,6 +15,7 @@ GNU General Public License for more details.
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QSplitter>
 #include "mainwidget.h"
 
 ///
@@ -37,10 +38,12 @@ MainWidget::MainWidget(QWidget* parent, Qt::WindowFlags flags)
     setGeometry(gRect);
     setMinimumSize(1280, 720);
 
-    m_vlayout = new QVBoxLayout();
+    m_hMainLayout = new QHBoxLayout();
     QWidget *w = new QWidget();
-    w->setLayout(m_vlayout);
+    w->setLayout(m_hMainLayout);
     setCentralWidget(w);
+
+    m_vlayout = new QVBoxLayout(this);
 
     QMenu* mnu = menuBar()->addMenu(QString::fromLocal8Bit("File"));
     QAction* newAct = mnu->addAction(QString::fromLocal8Bit("New project"), this, SLOT(NewProject()));
@@ -125,13 +128,35 @@ MainWidget::MainWidget(QWidget* parent, Qt::WindowFlags flags)
     genStatus(true);
     m_vlayout->addWidget(m_statusBar, 0);
 
+    m_vPointsLayout = new QVBoxLayout(this);
+    m_frameToMapLabel = new QLabel(this);
+    m_frameToMapLabel->setText("Frame to Map bindings");
+    m_vPointsLayout->addWidget(m_frameToMapLabel);
+    m_frameMapTable = new QTableWidget(this);
+    m_frameMapTable->setColumnCount(2);
+    m_frameMapTable->setShowGrid(true);
+    m_frameMapTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_frameMapTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_frameMapTable->setHorizontalHeaderLabels(QStringList() << tr("(x; y)") << tr("(lat; lon)"));
+    //m_frameMapTable->horizontalHeader()->setStretchLastSection(true);
+    //m_frameMapTable->hideColumn(0);
+    m_vPointsLayout->addWidget(m_frameMapTable);
+
+    //QSplitter* splitter = new QSplitter(this);
+    //splitter->addl
+    m_hMainLayout->addLayout(m_vlayout);
+    m_hMainLayout->addLayout(m_vPointsLayout);
+    m_hMainLayout->setStretch(0, 80);
+    m_hMainLayout->setStretch(1, 20);
+
     connect(m_statusZoomEdit, SIGNAL(editingFinished()), this, SLOT(updateZoom()));
     connect(m_statusLatitudeEdit, SIGNAL(editingFinished()), this, SLOT(updateGeoCoors()));
     connect(m_statusLongitudeEdit, SIGNAL(editingFinished()), this, SLOT(updateGeoCoors()));
     connect(m_map, SIGNAL(updateParams()), this, SLOT(updateEdits()));
     connect(this, SIGNAL(updateZoom(int)), m_map, SLOT(updateZoom(int)));
+    connect(m_map, SIGNAL(NewFrameGeoCoords(const QPolygonF&)), this, SLOT(NewFrameGeoCoords(const QPolygonF&)));
 
-    setLayout(m_vlayout);
+    //setLayout(m_vlayout);
 }
 
 ///
@@ -161,7 +186,7 @@ void MainWidget::ApplyProject(const ProjectSettings& projectSettings)
 }
 
 ///
-/// \brief MainWidget::NewProject
+/// \b  rief MainWidget::NewProject
 ///
 void MainWidget::NewProject()
 {
@@ -323,4 +348,25 @@ void MainWidget::updateTransparent(int transparent)
 {
     m_transparentLabel->setText("Transparent: " + QString::number(transparent));
     m_map->SetTransparent(transparent);
+}
+
+///
+/// \brief MainWidget::NewFrameGeoCoords
+/// \param geoCoords
+///
+void MainWidget::NewFrameGeoCoords(const QPolygonF& geoCoords)
+{
+    for (int i = 0; i < geoCoords.size(); ++i)
+    {
+        if (m_frameMapTable->rowCount() < i + 1)
+            m_frameMapTable->insertRow(i);
+        m_frameMapTable->setItem(i, 0, new QTableWidgetItem("(x; y)"));
+        m_frameMapTable->setItem(i, 1, new QTableWidgetItem(QString("(%1; %2)").arg(geoCoords[i].y()).arg(geoCoords[i].x())));
+    }
+    for (int i = geoCoords.size(); i < m_frameMapTable->rowCount(); ++i)
+    {
+        m_frameMapTable->removeRow(i);
+    }
+
+    m_frameMapTable->resizeColumnsToContents();
 }

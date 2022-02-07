@@ -69,6 +69,9 @@ public:
     void SetTransparent(int transparent);
     int GetTransparent() const;
 
+Q_SIGNALS:
+    void NewFrameGeoCoords(const QPolygonF& geoCoords);
+
 protected:
 	void paintEvent(QPaintEvent *);
 	void mousePressEvent(QMouseEvent*);
