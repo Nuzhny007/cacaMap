@@ -77,7 +77,7 @@ private slots:
     void NewProject();
     void OpenProject();
     void SaveProject();
-    void NewFrameGeoCoords(const QPolygonF& geoCoords);
+    void NewFrameGeoCoords(const FrameBinding& geoCoords);
 
     void showEvent(QShowEvent* showEvent);
 };

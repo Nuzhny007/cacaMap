@@ -64,13 +64,13 @@ public:
 	myDerivedMap(QWidget* _parent=0);
     ~myDerivedMap();
 
-    bool AddFrame(const QString& pathTofile, const QPolygonF& frameGeoPoints);
-    QPolygonF GetFrameGeoPoints() const;
+    bool AddFrame(const QString& pathTofile, const FrameBinding& frameGeoPoints);
+    FrameBinding GetFrameGeoPoints() const;
     void SetTransparent(int transparent);
     int GetTransparent() const;
 
 Q_SIGNALS:
-    void NewFrameGeoCoords(const QPolygonF& geoCoords);
+    void NewFrameGeoCoords(const FrameBinding& geoCoords);
 
 protected:
 	void paintEvent(QPaintEvent *);

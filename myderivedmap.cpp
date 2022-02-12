@@ -37,7 +37,7 @@ myDerivedMap::~myDerivedMap()
 /// \param img
 /// \param transform
 ///
-bool myDerivedMap::AddFrame(const QString& pathTofile, const QPolygonF& frameGeoPoints)
+bool myDerivedMap::AddFrame(const QString& pathTofile, const FrameBinding& frameGeoPoints)
 {
     bool res = m_geoFrame.AddFrame(pathTofile, frameGeoPoints, size(), zoom, tileSize, getGeoCoords());
     emit NewFrameGeoCoords(m_geoFrame.GetFrameGeoPoints());
@@ -49,7 +49,7 @@ bool myDerivedMap::AddFrame(const QString& pathTofile, const QPolygonF& frameGeo
 /// \brief myDerivedMap::GetFrameGeoPoints
 /// \return
 ///
-QPolygonF myDerivedMap::GetFrameGeoPoints() const
+FrameBinding myDerivedMap::GetFrameGeoPoints() const
 {
     return m_geoFrame.GetFrameGeoPoints();
 }
@@ -199,8 +199,16 @@ void myDerivedMap::paintEvent(QPaintEvent *e)
         auto currTransform = p.transform();
         p.setTransform(m_geoFrame.GetTransform());
         p.drawPixmap(0, 0, m_geoFrame.GetPixmap());
+
         p.setTransform(currTransform);
         p.setOpacity(currOpacity);
+
+        p.setPen(QPen(Qt::magenta, 4));
+        QPolygonF framePoints = m_geoFrame.GetTransformedFramePoints();
+        for (int i = 0; i < framePoints.size(); ++i)
+        {
+            p.drawEllipse(framePoints[i], m_geoFrame.GetVertexRadius(), m_geoFrame.GetVertexRadius());
+        }
     }
 }
 

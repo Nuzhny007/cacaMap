@@ -154,7 +154,7 @@ MainWidget::MainWidget(QWidget* parent, Qt::WindowFlags flags)
     connect(m_statusLongitudeEdit, SIGNAL(editingFinished()), this, SLOT(updateGeoCoors()));
     connect(m_map, SIGNAL(updateParams()), this, SLOT(updateEdits()));
     connect(this, SIGNAL(updateZoom(int)), m_map, SLOT(updateZoom(int)));
-    connect(m_map, SIGNAL(NewFrameGeoCoords(const QPolygonF&)), this, SLOT(NewFrameGeoCoords(const QPolygonF&)));
+    connect(m_map, SIGNAL(NewFrameGeoCoords(const FrameBinding&)), this, SLOT(NewFrameGeoCoords(const FrameBinding&)));
 
     //setLayout(m_vlayout);
 }
@@ -179,7 +179,7 @@ void MainWidget::ApplyProject(const ProjectSettings& projectSettings)
     m_map->setGeoCoords(QPointF(projectSettings.m_longitude, projectSettings.m_latitude), true);
     genStatus(true);
 
-    bool res = m_map->AddFrame(projectSettings.m_frameFileName, projectSettings.m_frameGeoPoints);
+    bool res = m_map->AddFrame(projectSettings.m_frameFileName, projectSettings.m_frameBinding);
     m_selectedFrame->setText(projectSettings.m_frameFileName);
     QString statusMessage = QString::asprintf("File %s is opened %s", projectSettings.m_frameFileName.toStdString().c_str(), res ? "" : "with error");
     m_statusBar->showMessage(statusMessage, 10000);
@@ -244,7 +244,7 @@ void MainWidget::SaveProject()
     projectSettings.m_latitude = geoCoords.y();
     projectSettings.m_longitude = geoCoords.x();
     projectSettings.m_frameFileName = m_selectedFrame->text();
-    projectSettings.m_frameGeoPoints = m_map->GetFrameGeoPoints();
+    projectSettings.m_frameBinding = m_map->GetFrameGeoPoints();
     projectSettings.Write(&file);
 }
 
@@ -282,7 +282,7 @@ void MainWidget::updateEdits()
 void MainWidget::selectFileClick(bool /*checked*/)
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open image or video"), "...", tr("Files (*.png *.jpg *.bmp, *avi, *.mp4)"));
-    bool res = m_map->AddFrame(fileName, QPolygonF());
+    bool res = m_map->AddFrame(fileName, FrameBinding());
     if (res)
         m_selectedFrame->setText(fileName);
     QString statusMessage = QString::asprintf("File %s is opened %s", fileName.toStdString().c_str(), res ? "" : "with error");
@@ -354,16 +354,16 @@ void MainWidget::updateTransparent(int transparent)
 /// \brief MainWidget::NewFrameGeoCoords
 /// \param geoCoords
 ///
-void MainWidget::NewFrameGeoCoords(const QPolygonF& geoCoords)
+void MainWidget::NewFrameGeoCoords(const FrameBinding& geoCoords)
 {
-    for (int i = 0; i < geoCoords.size(); ++i)
+    for (int i = 0; i < geoCoords.m_geoPoints.size(); ++i)
     {
         if (m_frameMapTable->rowCount() < i + 1)
             m_frameMapTable->insertRow(i);
-        m_frameMapTable->setItem(i, 0, new QTableWidgetItem("(x; y)"));
-        m_frameMapTable->setItem(i, 1, new QTableWidgetItem(QString("(%1; %2)").arg(geoCoords[i].y()).arg(geoCoords[i].x())));
+        m_frameMapTable->setItem(i, 0, new QTableWidgetItem(QString("(%1; %2)").arg(geoCoords.m_framePoints[i].x()).arg(geoCoords.m_framePoints[i].y())));
+        m_frameMapTable->setItem(i, 1, new QTableWidgetItem(QString("(%1; %2)").arg(geoCoords.m_geoPoints[i].y()).arg(geoCoords.m_geoPoints[i].x())));
     }
-    for (int i = geoCoords.size(); i < m_frameMapTable->rowCount(); ++i)
+    for (int i = geoCoords.m_geoPoints.size(); i < m_frameMapTable->rowCount(); ++i)
     {
         m_frameMapTable->removeRow(i);
     }

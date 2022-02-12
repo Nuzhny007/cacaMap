@@ -5,6 +5,7 @@
 #include <QPolygonF>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
+#include "GeoFrame.h"
 
 ///
 /// \brief The ProjectSettings class
@@ -16,7 +17,7 @@ public:
     double m_longitude = 30.0;
     int m_zoom = 18;
     QString m_frameFileName;
-    QPolygonF m_frameGeoPoints;
+    FrameBinding m_frameBinding;
 
     QXmlStreamReader m_readXml;
 
@@ -75,8 +76,16 @@ public:
                         QPointF geoPt;
                         geoPt.setY(m_readXml.attributes().value(QStringLiteral("lat")).toDouble());
                         geoPt.setX(m_readXml.attributes().value(QStringLiteral("lon")).toDouble());
-                        m_frameGeoPoints.push_back(geoPt);
-                        readedName = "Geo point[" + QString::number(m_frameGeoPoints.size() - 1) + "]: lat = " + QString::number(geoPt.x()) + ", lon = " + QString::number(geoPt.y());
+                        m_frameBinding.m_geoPoints.push_back(geoPt);
+                        readedName = "Geo point[" + QString::number(m_frameBinding.m_geoPoints.size() - 1) + "]: lat = " + QString::number(geoPt.x()) + ", lon = " + QString::number(geoPt.y());
+                    }
+                    else if (m_readXml.name() == QLatin1String("frame_point"))
+                    {
+                        QPointF framePt;
+                        framePt.setX(m_readXml.attributes().value(QStringLiteral("x")).toDouble());
+                        framePt.setY(m_readXml.attributes().value(QStringLiteral("y")).toDouble());
+                        m_frameBinding.m_framePoints.push_back(framePt);
+                        readedName = "Frame point[" + QString::number(m_frameBinding.m_framePoints.size() - 1) + "]: x = " + QString::number(framePt.x()) + ", y = " + QString::number(framePt.y());
                     }
                     m_readXml.skipCurrentElement();
 
@@ -137,11 +146,18 @@ public:
         writeXml.writeAttribute("val", m_frameFileName);
         writeXml.writeEndElement();
 
-        for (auto geoPt : m_frameGeoPoints)
+        for (auto geoPt : qAsConst(m_frameBinding.m_geoPoints))
         {
             writeXml.writeStartElement("geo_point");
             writeXml.writeAttribute("lat", QString::number(geoPt.y(), 'g', 9));
             writeXml.writeAttribute("lon", QString::number(geoPt.x(), 'g', 10));
+            writeXml.writeEndElement();
+        }
+        for (auto framePt : qAsConst(m_frameBinding.m_framePoints))
+        {
+            writeXml.writeStartElement("frame_point");
+            writeXml.writeAttribute("x", QString::number(framePt.x(), 'g', 10));
+            writeXml.writeAttribute("y", QString::number(framePt.y(), 'g', 10));
             writeXml.writeEndElement();
         }
 

@@ -3,6 +3,15 @@
 #include "cacamap.h"
 
 ///
+/// \brief The FrameBinding struct
+///
+struct FrameBinding
+{
+    QPolygonF m_geoPoints;
+    QPolygonF m_framePoints;
+};
+
+///
 /// \brief The GeoFrame class
 ///
 class GeoFrame
@@ -29,7 +38,7 @@ public:
     /// \param geoCenter
     /// \return
     ///
-    bool AddFrame(const QString& pathTofile, const QPolygonF& frameGeoPoints, QSize mapSize, int zoom, int tileSize, QPointF geoCenter)
+    bool AddFrame(const QString& pathTofile, const FrameBinding& frameBinding, QSize mapSize, int zoom, int tileSize, QPointF geoCenter)
     {
         m_mapSize = mapSize;
 
@@ -40,7 +49,7 @@ public:
             return false;
         }
 
-        if (frameGeoPoints.empty())
+        if (frameBinding.m_geoPoints.empty())
         {
             QRectF fromRect(0, 0, m_img.width(), m_img.height());
             QPolygonF fromPoly(fromRect);
@@ -48,6 +57,14 @@ public:
             QRectF toRect(mapSize.width() / 4., mapSize.height() / 4., mapSize.width() / 2., mapSize.height() / 2.);
             QPolygonF toPoly(toRect);
             toPoly.pop_back();
+
+            m_frameBinding.m_framePoints.resize(fromPoly.size());
+            for (int i = 0; i < fromPoly.size(); ++i)
+            {
+                m_frameBinding.m_framePoints[i].setX(fromPoly[i].x());
+                m_frameBinding.m_framePoints[i].setY(fromPoly[i].y());
+            }
+
             bool res = QTransform::quadToQuad(fromPoly, toPoly, m_transform);
             if (res)
             {
@@ -58,7 +75,7 @@ public:
                     return longPoint(pix.x - pixCenter.x + x, pix.y - pixCenter.y + y);
                 };
 
-                m_imgGeoCoords = QPolygonF({ myMercator::pixelToGeoCoord(Pix2Lp(toRect.x(), toRect.y()), zoom, tileSize),
+                m_frameBinding.m_geoPoints = QPolygonF({ myMercator::pixelToGeoCoord(Pix2Lp(toRect.x(), toRect.y()), zoom, tileSize),
                                              myMercator::pixelToGeoCoord(Pix2Lp(toRect.right(), toRect.y()), zoom, tileSize),
                                              myMercator::pixelToGeoCoord(Pix2Lp(toRect.right(), toRect.bottom()), zoom, tileSize),
                                              myMercator::pixelToGeoCoord(Pix2Lp(toRect.x(), toRect.bottom()), zoom, tileSize)});
@@ -66,14 +83,14 @@ public:
         }
         else
         {
-            m_imgGeoCoords = frameGeoPoints;
+            m_frameBinding = frameBinding;
             RecalcCoords(zoom, tileSize, geoCenter);
         }
 #if 0
-        std::cout << "'AddFrame: m_imgGeoCoords: ";
-        for (int i = 0; i < m_imgGeoCoords.count(); ++i)
+        std::cout << "'AddFrame: m_frameBinding.m_geoPoints: ";
+        for (int i = 0; i < m_frameBinding.m_geoPoints.count(); ++i)
         {
-            std::cout << "(" << m_imgGeoCoords.at(i).x() << ", " << m_imgGeoCoords.at(i).y() << ") ";
+            std::cout << "(" << m_frameBinding.m_geoPoints.at(i).x() << ", " << m_frameBinding.m_geoPoints.at(i).y() << ") ";
         }
         std::cout << std::endl;
         std::cout << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
@@ -99,13 +116,20 @@ public:
         QPolygonF fromPoly(fromRect);
         fromPoly.pop_back();
 
+        m_frameBinding.m_framePoints.resize(fromPoly.size());
+        for (int i = 0; i < fromPoly.size(); ++i)
+        {
+            m_frameBinding.m_framePoints[i].setX(fromPoly[i].x());
+            m_frameBinding.m_framePoints[i].setY(fromPoly[i].y());
+        }
+
         longPoint pixCenter(m_mapSize.width() / 2, m_mapSize.height() / 2);
         longPoint pix = myMercator::geoCoordToPixel(geoCenter, zoom, tileSize);
 
-        auto p1 = myMercator::geoCoordToPixel(m_imgGeoCoords.at(0), zoom, tileSize);
-        auto p2 = myMercator::geoCoordToPixel(m_imgGeoCoords.at(1), zoom, tileSize);
-        auto p3 = myMercator::geoCoordToPixel(m_imgGeoCoords.at(2), zoom, tileSize);
-        auto p4 = myMercator::geoCoordToPixel(m_imgGeoCoords.at(3), zoom, tileSize);
+        auto p1 = myMercator::geoCoordToPixel(m_frameBinding.m_geoPoints.at(0), zoom, tileSize);
+        auto p2 = myMercator::geoCoordToPixel(m_frameBinding.m_geoPoints.at(1), zoom, tileSize);
+        auto p3 = myMercator::geoCoordToPixel(m_frameBinding.m_geoPoints.at(2), zoom, tileSize);
+        auto p4 = myMercator::geoCoordToPixel(m_frameBinding.m_geoPoints.at(3), zoom, tileSize);
 
         auto Lp2Pix = [pixCenter, pix](quint32 x, quint32 y)
         {
@@ -127,6 +151,7 @@ public:
 #endif
 
         bool res = QTransform::quadToQuad(fromPoly, toPoly, m_transform);
+        assert(res);
 #if 0
         std::cout << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
                   << "(" << m_transform.m21() << ", " << m_transform.m22() << ", " << m_transform.m23() << "), "
@@ -172,9 +197,25 @@ public:
     /// \brief GetFrameGeoPoints
     /// \return
     ///
-    QPolygonF GetFrameGeoPoints() const
+    FrameBinding GetFrameGeoPoints() const
     {
-       return m_imgGeoCoords;
+        return m_frameBinding;
+    }
+    ///
+    /// \brief GetTransformedFramePoints
+    /// \return
+    ///
+    QPolygonF GetTransformedFramePoints() const
+    {
+        return m_transform.map(m_frameBinding.m_framePoints);
+    }
+    ///
+    /// \brief GetVertexRadius
+    /// \return
+    ///
+    int GetVertexRadius() const
+    {
+        return m_vertexRadius;
     }
 
     ///
@@ -233,14 +274,14 @@ public:
 
         if (m_vertexIndex >= 0)
         {
-                longPoint p = myMercator::geoCoordToPixel(m_imgGeoCoords.at(m_vertexIndex), zoom, tileSize);
+                longPoint p = myMercator::geoCoordToPixel(m_frameBinding.m_geoPoints.at(m_vertexIndex), zoom, tileSize);
                 p.x += delta.x();
                 p.y += delta.y();
-                m_imgGeoCoords[m_vertexIndex] = myMercator::pixelToGeoCoord(p, zoom, tileSize);
+                m_frameBinding.m_geoPoints[m_vertexIndex] = myMercator::pixelToGeoCoord(p, zoom, tileSize);
         }
         else
         {
-            for (QPointF& geoPt : m_imgGeoCoords)
+            for (QPointF& geoPt : m_frameBinding.m_geoPoints)
             {
                 longPoint p = myMercator::geoCoordToPixel(geoPt, zoom, tileSize);
                 p.x += delta.x();
@@ -257,7 +298,7 @@ private:
     QTransform m_transform;
 
     QSize m_mapSize;
-    QPolygonF m_imgGeoCoords;
+    FrameBinding m_frameBinding;
 
     QPoint m_mouseAnchor;
     int m_vertexIndex = -1;
