@@ -45,7 +45,7 @@ public:
         m_img.load(pathTofile);
         if (m_img.isNull())
         {
-            std::cout << "Can not load frame from " << pathTofile.toStdString() << std::endl;
+            qDebug() << "Can not load frame from " << pathTofile;
             return false;
         }
 
@@ -87,15 +87,15 @@ public:
             RecalcCoords(zoom, tileSize, geoCenter);
         }
 #if 0
-        std::cout << "'AddFrame: m_frameBinding.m_geoPoints: ";
+        qDebug() << "'AddFrame: m_frameBinding.m_geoPoints: ";
         for (int i = 0; i < m_frameBinding.m_geoPoints.count(); ++i)
         {
             std::cout << "(" << m_frameBinding.m_geoPoints.at(i).x() << ", " << m_frameBinding.m_geoPoints.at(i).y() << ") ";
         }
         std::cout << std::endl;
-        std::cout << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
+        qDebug() << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
                   << "(" << m_transform.m21() << ", " << m_transform.m22() << ", " << m_transform.m23() << "), "
-                  << "(" << m_transform.m31() << ", " << m_transform.m32() << ", " << m_transform.m33() << ")]" << std::endl;
+                  << "(" << m_transform.m31() << ", " << m_transform.m32() << ", " << m_transform.m33() << ")]";
 #endif
 
         return true;
@@ -134,14 +134,14 @@ public:
         auto Lp2Pix = [pixCenter, pix](quint32 x, quint32 y)
         {
             QPointF pt(x - pix.x + pixCenter.x, y - pix.y + pixCenter.y);
-            //std::cout << "Lp2Pix: x = " << x << " -> " << pt.x() << ", y = " << y << " -> " << pt.y() << std::endl;
+            //qDebug() << "Lp2Pix: x = " << x << " -> " << pt.x() << ", y = " << y << " -> " << pt.y();
             return pt;
         };
 
         QPolygonF toPoly({ Lp2Pix(p1.x, p1.y), Lp2Pix(p2.x, p2.y), Lp2Pix(p3.x, p3.y), Lp2Pix(p4.x, p4.y) });
 
 #if 0
-        std::cout << "pixCenter(" << pixCenter.x << ", " << pixCenter.y << "), geoCenter(" << geoCenter.x() << ", " << geoCenter.y() << "), pix(" << pix.x << ", " << pix.y << ")" << std::endl;
+        qDebug() << "pixCenter(" << pixCenter.x << ", " << pixCenter.y << "), geoCenter(" << geoCenter.x() << ", " << geoCenter.y() << "), pix(" << pix.x << ", " << pix.y << ")";
         std::cout << "'RecalcCoords: toPoly: ";
         for (int i = 0; i < toPoly.count(); ++i)
         {
@@ -153,9 +153,9 @@ public:
         bool res = QTransform::quadToQuad(fromPoly, toPoly, m_transform);
         assert(res);
 #if 0
-        std::cout << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
+        qDebug() << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
                   << "(" << m_transform.m21() << ", " << m_transform.m22() << ", " << m_transform.m23() << "), "
-                  << "(" << m_transform.m31() << ", " << m_transform.m32() << ", " << m_transform.m33() << ")]" << std::endl;
+                  << "(" << m_transform.m31() << ", " << m_transform.m32() << ", " << m_transform.m33() << ")]";
 #endif
     }
 

@@ -26,21 +26,21 @@ bool servermanager::loadConfigFile(QString xmlfile)
 
     if (!file.open(QIODevice::ReadOnly))
     {
-        std::cout << "couldn't open file: " << xmlfile.toStdString() << std::endl;
+        qDebug() << "couldn't open file: " << xmlfile;
         return false;
     }
 
     if (!doc.setContent(&file))
     {
         file.close();
-        std::cout << "couldn't set content: " << xmlfile.toStdString() << std::endl;
+        qDebug() << "couldn't set content: " << xmlfile;
         return false;
     }
 
     QDomNodeList servers = doc.elementsByTagName("server");
     if(!servers.length())
     {
-        std::cout << "no servers defined in xml file: " << xmlfile.toStdString() << std::endl;
+        qDebug() << "no servers defined in xml file: " << xmlfile;
         return false;
     }
     for (int i = 0; i < servers.length(); ++i)
@@ -49,14 +49,14 @@ bool servermanager::loadConfigFile(QString xmlfile)
         QDomNode namenode = server.namedItem("name");
         if (namenode.isNull())
         {
-            std::cout << "server has no name tag in xml file" << std::endl;
+            qDebug() << "server has no name tag in xml file";
             return 0;
         }
 
         QDomCharacterData nametext = namenode.firstChild().toCharacterData();
         if (nametext.isNull())
         {
-            std::cout << "server name is empty in xml" << std::endl;
+            qDebug() << "server name is empty in xml";
             return 0;
         }
         serverNames.append(nametext.data());
@@ -65,7 +65,7 @@ bool servermanager::loadConfigFile(QString xmlfile)
         QDomCDATASection urltext = urlnode.firstChild().toCDATASection();
         if (urltext.isNull())
         {
-            std::cout << "url format is empty in xml" << std::endl;
+            qDebug() << "url format is empty in xml";
             return 0;
         }
 
@@ -73,7 +73,7 @@ bool servermanager::loadConfigFile(QString xmlfile)
         QDomCharacterData foldertext = foldernode.firstChild().toCharacterData();
         if (foldertext.isNull())
         {
-            std::cout << "folder format is empty in xml" << std::endl;
+            qDebug() << "folder format is empty in xml";
             return 0;
         }
 
@@ -81,7 +81,7 @@ bool servermanager::loadConfigFile(QString xmlfile)
         QDomCDATASection filepathtext = filepathnode.firstChild().toCDATASection();
         if (filepathtext.isNull())
         {
-            std::cout << "filepath is empty in xml" << std::endl;
+            qDebug() << "filepath is empty in xml";
             return 0;
         }
 
@@ -89,7 +89,7 @@ bool servermanager::loadConfigFile(QString xmlfile)
         QDomCDATASection tiletext = tilenode.firstChild().toCDATASection();
         if (tiletext.isNull())
         {
-            std::cout << "tile format is empty in xml" << std::endl;
+            qDebug()  << "tile format is empty in xml";
             return 0;
         }
 

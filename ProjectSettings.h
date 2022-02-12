@@ -38,17 +38,17 @@ public:
     bool Read(QIODevice* device)
     {
         m_readXml.setDevice(device);
-        std::cout << "Set devide: " << m_readXml.name().toString().toStdString() << std::endl;
+        qDebug() << "Set devide: " << m_readXml.name().toString();
 
         if (m_readXml.readNextStartElement())
         {
-            std::cout << "Read first: " << m_readXml.name().toString().toStdString() << std::endl;
+            qDebug() << "Read first: " << m_readXml.name().toString();
             if (m_readXml.name() == QLatin1String("project")
                     && m_readXml.attributes().value(versionAttribute()) == QLatin1String("1.0"))
             {
                 while (m_readXml.readNextStartElement())
                 {
-                    std::cout << "Read next: " << m_readXml.name().toString().toStdString() << ", attributes " << m_readXml.attributes().size() << " has val: " << m_readXml.attributes().hasAttribute("val") << std::endl;
+                    qDebug() << "Read next: " << m_readXml.name().toString() << ", attributes " << m_readXml.attributes().size() << " has val: " << m_readXml.attributes().hasAttribute("val");
 
                     QString readedName = "None";
                     if (m_readXml.name() == QLatin1String("zoom"))
@@ -89,7 +89,7 @@ public:
                     }
                     m_readXml.skipCurrentElement();
 
-                    std::cout << "Readed " << readedName.toStdString() << std::endl;
+                    qDebug() << "Readed " << readedName;
                 }
                 m_readXml.skipCurrentElement();
             }

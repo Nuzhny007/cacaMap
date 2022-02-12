@@ -73,15 +73,18 @@ Q_SIGNALS:
     void NewFrameGeoCoords(const FrameBinding& geoCoords);
 
 protected:
-	void paintEvent(QPaintEvent *);
-	void mousePressEvent(QMouseEvent*);
-	void mouseMoveEvent(QMouseEvent*);
-	void mouseDoubleClickEvent(QMouseEvent*);
-    void resizeEvent(QResizeEvent*);
+    void paintEvent(QPaintEvent *) override;
+    void mousePressEvent(QMouseEvent*) override;
+    void mouseMoveEvent(QMouseEvent*) override;
+    void mouseDoubleClickEvent(QMouseEvent*) override;
+    void resizeEvent(QResizeEvent*) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
 
 private:
     QPoint m_mouseAnchor; /**< used to keep track of the last mouse click location.*/
     bool m_moveMap = false;
+    bool m_ctrlPressed = false;
     QTimer* m_timer;
     QHBoxLayout* m_hlayout;
 	
@@ -92,6 +95,7 @@ private:
 
     GeoFrame m_geoFrame;
     int m_transparent = 50;
+
 protected slots:
 	void zoomAnim();
     void updateZoom(int);

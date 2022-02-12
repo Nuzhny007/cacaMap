@@ -7,7 +7,7 @@
 myDerivedMap::myDerivedMap(QWidget* parent)
     : cacaMap(parent)
 {
-    std::cout << "derived constructor" << std::endl;
+    qDebug() << "derived constructor";
     m_timer = new QTimer(this);
 
     m_hlayout = new QHBoxLayout;
@@ -155,7 +155,7 @@ void myDerivedMap::zoomAnim()
 	{
         QPointF deltaSpace = m_destination - getGeoCoords();
         setGeoCoords(getGeoCoords() + m_animRate * deltaSpace, true);
-        buffzoomrate-= delta*m_animRate;
+        buffzoomrate-= delta * m_animRate;
 		updateContent();
 	}
 	//you are already there
@@ -220,4 +220,30 @@ void myDerivedMap::resizeEvent(QResizeEvent* event)
     m_geoFrame.SetNewMapSize(size());
     m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
     cacaMap::resizeEvent(event);
+}
+
+///
+/// \brief myDerivedMap::keyPressEvent
+/// \param event
+///
+void myDerivedMap::keyPressEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Control)
+    {
+        qDebug() << "Key ctrl pressed";
+        m_ctrlPressed = true;
+    }
+}
+
+///
+/// \brief myDerivedMap::keyReleaseEvent
+/// \param event
+///
+void myDerivedMap::keyReleaseEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Control)
+    {
+        qDebug() << "Key ctrl released";
+        m_ctrlPressed = false;
+    }
 }

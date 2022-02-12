@@ -68,14 +68,14 @@ QPointF myMercator::pixelToGeoCoord(longPoint const &pixelcoord, int zoom, int t
 cacaMap::cacaMap(QWidget* parent)
     : QWidget(parent)
 {
-    std::cout << "cacamap constructor" << std::endl;
+    qDebug() << "cacamap constructor";
 
     folder = QDir::currentPath();
-    std::cout << "Current folder: " << folder.toStdString() << std::endl;
+    qDebug() << "Current folder: " << folder;
 
     QString serversFile = "tileservers.xml";
     if (!servermgr.loadConfigFile(serversFile))
-        std::cout << "error loading server file: " << serversFile.toStdString() << std::endl;
+        qDebug() << "error loading server file: " << serversFile;
 
     loadCache();
     manager = std::make_unique<QNetworkAccessManager>(this);
@@ -258,7 +258,7 @@ QPixmap cacaMap::getTilePatch(int zoom, quint32 x, quint32 y, int offx, int offy
 			}
 			else
 			{
-                std::cout << "no file found: " << path.toStdString() << fileName.toStdString() << std::endl;
+                qDebug() << "no file found: " << path << fileName;
 			}
 		}
 		else
@@ -295,12 +295,12 @@ void cacaMap::downloadPicture()
 		}
 		else
 		{
-            std::cout << "no items in the queue" << std::endl;
+            qDebug() << "no items in the queue";
 		}
 	}
 	else
 	{
-        std::cout << "another download is already in progress... " << std::endl;
+        qDebug() << "another download is already in progress...";
 	}
 }
 /**
@@ -344,7 +344,7 @@ void cacaMap::loadCache()
 			}
 		}
 		QDir::setCurrent(folder);
-        std::cout << "cache size " << (float)cacheSize/1024/1024 << " MB" << std::endl;
+        qDebug() << "cache size " << (float)cacheSize/1024/1024 << " MB";
 	}
 }
 
@@ -423,7 +423,7 @@ void cacaMap::slotDownloadReady(QNetworkReply * _reply)
 				f.open(QIODevice::WriteOnly);
 				quint64 byteswritten = f.write(data);
                 if (byteswritten <= 0)
-                    std::cout << "error writing to file: " << f.fileName().toStdString() << std::endl;
+                    qDebug() << "error writing to file: " << f.fileName();
 				f.close();
 				//remove item from download queue
 				downloadQueue.remove(i.key());
@@ -436,7 +436,7 @@ void cacaMap::slotDownloadReady(QNetworkReply * _reply)
 			}
 			else
 			{
-                std::cout << "downloaded tile " << surl.toStdString() << " was not in Download queue. Data ignored" << std::endl;
+                qDebug() << "downloaded tile " << surl << " was not in Download queue. Data ignored";
 			}
 			downloading = false;
 			downloadPicture();
@@ -449,7 +449,7 @@ void cacaMap::slotDownloadReady(QNetworkReply * _reply)
 	}
 	else
 	{
-        std::cout << "network error: (" << error << ") " << _reply->errorString().toStdString() << std::endl;
+        qDebug() << "network error: (" << error << ") " << _reply->errorString();
 		
 		if(found)
 		{
@@ -470,7 +470,7 @@ Slot that gets called when theres is an network error
 */
 void cacaMap::slotError(QNetworkReply::NetworkError _code)
 {
-    std::cout << "some error " << _code << std::endl;
+    qDebug() << "some error " << _code;
 }
 
 /**
@@ -595,7 +595,7 @@ void cacaMap::updateBuffer()
 					}
 					else
 					{
-                        std::cout << "no file found " << path.toStdString() << fileName.toStdString() << std::endl;
+                        qDebug() << "no file found " << path << fileName;
 					}
 				}
 				//check if it's in the list of unavailable tiles
