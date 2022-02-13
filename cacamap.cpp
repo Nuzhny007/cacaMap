@@ -295,7 +295,7 @@ void cacaMap::downloadPicture()
 		}
 		else
 		{
-            qDebug() << "no items in the queue";
+            //qDebug() << "no items in the queue";
 		}
 	}
 	else
@@ -303,6 +303,7 @@ void cacaMap::downloadPicture()
         qDebug() << "another download is already in progress...";
 	}
 }
+
 /**
 Populates the cache list by checking the existing files on the cache folder
 */

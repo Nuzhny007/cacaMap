@@ -85,6 +85,7 @@ private:
     QPoint m_mouseAnchor; /**< used to keep track of the last mouse click location.*/
     bool m_moveMap = false;
     bool m_ctrlPressed = false;
+    bool m_altPressed = false;
     QTimer* m_timer;
     QHBoxLayout* m_hlayout;
 	
@@ -99,4 +100,6 @@ private:
 protected slots:
 	void zoomAnim();
     void updateZoom(int);
+    void CtrlKey(bool pressed);
+    void AltKey(bool pressed);
 };

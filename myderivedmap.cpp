@@ -80,7 +80,7 @@ This is used for scrolling the map
 */
 void myDerivedMap::mousePressEvent(QMouseEvent* e)
 {
-    m_moveMap = !m_geoFrame.IsInFrame(e->pos());
+    m_moveMap = !m_geoFrame.IsInFrame(e->pos(), m_ctrlPressed, m_altPressed);
     if (m_moveMap)
         m_mouseAnchor = e->pos();
 }
@@ -106,7 +106,7 @@ void myDerivedMap::mouseMoveEvent(QMouseEvent* e)
     }
     else
     {
-        if (m_geoFrame.MouseMove(e->pos(), zoom, tileSize))
+        if (m_geoFrame.MouseMove(e->pos(), zoom, tileSize, m_ctrlPressed, m_altPressed))
         {
             m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
             emit NewFrameGeoCoords(m_geoFrame.GetFrameGeoPoints());
@@ -126,13 +126,13 @@ void myDerivedMap::mouseDoubleClickEvent(QMouseEvent* e)
 	//do the zoom-in animation magic
 	if (e->button() == Qt::LeftButton)
 	{
-		QPoint deltapx = e->pos() - QPoint(width()/2,height()/2);
+        QPoint deltapx = e->pos() - QPoint(width() / 2, height() / 2);
         longPoint currpospx = myMercator::geoCoordToPixel(getGeoCoords(), zoom, tileSize);
 		longPoint newpospx;
 		newpospx.x = currpospx.x + deltapx.x();
 		newpospx.y = currpospx.y + deltapx.y();
         m_destination = myMercator::pixelToGeoCoord(newpospx,zoom,tileSize);
-        connect(m_timer,SIGNAL(timeout()),this,SLOT(zoomAnim()));
+        connect(m_timer, SIGNAL(timeout()), this, SLOT(zoomAnim()));
         m_timer->start(40);
 	}
 	//do a simple zoom out for now
@@ -155,14 +155,15 @@ void myDerivedMap::zoomAnim()
 	{
         QPointF deltaSpace = m_destination - getGeoCoords();
         setGeoCoords(getGeoCoords() + m_animRate * deltaSpace, true);
-        buffzoomrate-= delta * m_animRate;
+        buffzoomrate -= delta * m_animRate;
+        m_geoFrame.RecalcCoords(zoom, tileSize, getGeoCoords());
 		updateContent();
 	}
 	//you are already there
 	else
 	{
         m_timer->stop();
-        disconnect(m_timer,SIGNAL(timeout()),this,SLOT(zoomAnim()));
+        disconnect(m_timer, SIGNAL(timeout()), this, SLOT(zoomAnim()));
         setGeoCoords(m_destination, true);
 		buffzoomrate = 1.0;
 		zoomIn();
@@ -233,6 +234,11 @@ void myDerivedMap::keyPressEvent(QKeyEvent* event)
         qDebug() << "Key ctrl pressed";
         m_ctrlPressed = true;
     }
+    else if (event->key() == Qt::Key_Alt)
+    {
+        qDebug() << "Key alt pressed";
+        m_altPressed = true;
+    }
 }
 
 ///
@@ -246,4 +252,29 @@ void myDerivedMap::keyReleaseEvent(QKeyEvent* event)
         qDebug() << "Key ctrl released";
         m_ctrlPressed = false;
     }
+    else if (event->key() == Qt::Key_Alt)
+    {
+        qDebug() << "Key alt released";
+        m_altPressed = false;
+    }
+}
+
+///
+/// \brief myDerivedMap::CtrlKey
+/// \param pressed
+///
+void myDerivedMap::CtrlKey(bool pressed)
+{
+    m_ctrlPressed = pressed;
+    qDebug() << "Key ctrl from main " << (m_ctrlPressed ? "pressed" : "released");
+}
+
+///
+/// \brief myDerivedMap::AltKey
+/// \param pressed
+///
+void myDerivedMap::AltKey(bool pressed)
+{
+    m_altPressed = pressed;
+    qDebug() << "Key alt from main " << (m_altPressed ? "pressed" : "released");
 }

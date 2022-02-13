@@ -26,6 +26,8 @@ public:
 
 Q_SIGNALS:
     void updateZoom(int);
+    void CtrlKey(bool pressed);
+    void AltKey(bool pressed);
 
 private:
 	void populateCombo();
@@ -65,8 +67,14 @@ private:
     void ApplyProject(const ProjectSettings& projectSettings);
 
 protected:
-	void paintEvent(QPaintEvent*);
+    void paintEvent(QPaintEvent*) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
+
+private:
     void genStatus(bool fillEdits = true);
+    void showEvent(QShowEvent* showEvent) override;
+
 private slots:
 	void setServer(int);
     void updateZoom();
@@ -78,6 +86,4 @@ private slots:
     void OpenProject();
     void SaveProject();
     void NewFrameGeoCoords(const FrameBinding& geoCoords);
-
-    void showEvent(QShowEvent* showEvent);
 };

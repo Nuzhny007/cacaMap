@@ -112,17 +112,6 @@ public:
         if (m_img.isNull())
             return;
 
-        QRectF fromRect(0, 0, m_img.width(), m_img.height());
-        QPolygonF fromPoly(fromRect);
-        fromPoly.pop_back();
-
-        m_frameBinding.m_framePoints.resize(fromPoly.size());
-        for (int i = 0; i < fromPoly.size(); ++i)
-        {
-            m_frameBinding.m_framePoints[i].setX(fromPoly[i].x());
-            m_frameBinding.m_framePoints[i].setY(fromPoly[i].y());
-        }
-
         longPoint pixCenter(m_mapSize.width() / 2, m_mapSize.height() / 2);
         longPoint pix = myMercator::geoCoordToPixel(geoCenter, zoom, tileSize);
 
@@ -150,13 +139,17 @@ public:
         std::cout << std::endl;
 #endif
 
-        bool res = QTransform::quadToQuad(fromPoly, toPoly, m_transform);
-        assert(res);
+        if (!m_movePointOnFrame)
+        {
+            bool res = QTransform::quadToQuad(m_frameBinding.m_framePoints, toPoly, m_transform);
+            if (!res)
+                qDebug() << "Bad conversion frame points to map";
 #if 0
-        qDebug() << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
-                  << "(" << m_transform.m21() << ", " << m_transform.m22() << ", " << m_transform.m23() << "), "
-                  << "(" << m_transform.m31() << ", " << m_transform.m32() << ", " << m_transform.m33() << ")]";
+            qDebug() << "quadToQuad: " << res << ", matrix: [(" << m_transform.m11() << ", " << m_transform.m12() << ", " << m_transform.m13() << "), "
+                     << "(" << m_transform.m21() << ", " << m_transform.m22() << ", " << m_transform.m23() << "), "
+                     << "(" << m_transform.m31() << ", " << m_transform.m32() << ", " << m_transform.m33() << ")]";
 #endif
+        }
     }
 
     ///
@@ -223,16 +216,20 @@ public:
     /// \param pt
     /// \return
     ///
-    bool IsInFrame(QPoint pt)
+    bool IsInFrame(QPoint pt, bool movePointOnFrame, bool movePointOnMap)
     {
+        m_movePointOnFrame = false;
+        m_movePointOnMap = false;
+
         QRectF imgRect(0, 0, m_img.width(), m_img.height());
         QPolygonF imgPoly(imgRect);
         QPolygonF imgOnMapPoly = m_transform.map(imgPoly);
+        QPolygonF bindPoints = GetTransformedFramePoints();
 
         m_vertexIndex = -1;
-        for (int i = 0; i < imgOnMapPoly.size(); ++i)
+        for (int i = 0; i < bindPoints.size(); ++i)
         {
-            auto vertex = imgOnMapPoly.at(i);
+            auto vertex = bindPoints.at(i);
             QRectF vertexRect(vertex.x() - m_vertexRadius, vertex.y() - m_vertexRadius, 2 * m_vertexRadius, 2 * m_vertexRadius);
             if (vertexRect.contains(pt))
             {
@@ -242,8 +239,15 @@ public:
         }
 
         bool res = m_vertexIndex >= 0;
-        if (!res)
+        if (res)
+        {
+            m_movePointOnFrame = movePointOnFrame;
+            m_movePointOnMap = movePointOnMap;
+        }
+        else
+        {
             res = imgOnMapPoly.containsPoint(pt, Qt::OddEvenFill);
+        }
 
         if (res)
             m_mouseAnchor = pt;
@@ -267,17 +271,25 @@ public:
     /// \param tileSize
     /// \return
     ///
-    bool MouseMove(QPoint pt, int zoom, int tileSize)
+    bool MouseMove(QPoint pt, int zoom, int tileSize, bool movePointOnFrame, bool /*movePointOnMap*/)
     {
         QPoint delta = pt - m_mouseAnchor;
         m_mouseAnchor = pt;
 
         if (m_vertexIndex >= 0)
         {
+            //if (movePointOnMap)
+            {
                 longPoint p = myMercator::geoCoordToPixel(m_frameBinding.m_geoPoints.at(m_vertexIndex), zoom, tileSize);
                 p.x += delta.x();
                 p.y += delta.y();
                 m_frameBinding.m_geoPoints[m_vertexIndex] = myMercator::pixelToGeoCoord(p, zoom, tileSize);
+            }
+            if (movePointOnFrame)
+            {
+                //qDebug() << "Move point " << m_vertexIndex;
+                m_frameBinding.m_framePoints[m_vertexIndex] = m_transform.inverted().map(pt);
+            }
         }
         else
         {
@@ -289,7 +301,6 @@ public:
                 geoPt = myMercator::pixelToGeoCoord(p, zoom, tileSize);
             }
         }
-
         return true;
     }
 
@@ -302,6 +313,8 @@ private:
 
     QPoint m_mouseAnchor;
     int m_vertexIndex = -1;
+    bool m_movePointOnFrame = false;
+    bool m_movePointOnMap = false;
 
     static constexpr int m_vertexRadius = 20;
 };

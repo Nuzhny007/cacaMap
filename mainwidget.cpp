@@ -155,6 +155,8 @@ MainWidget::MainWidget(QWidget* parent, Qt::WindowFlags flags)
     connect(m_map, SIGNAL(updateParams()), this, SLOT(updateEdits()));
     connect(this, SIGNAL(updateZoom(int)), m_map, SLOT(updateZoom(int)));
     connect(m_map, SIGNAL(NewFrameGeoCoords(const FrameBinding&)), this, SLOT(NewFrameGeoCoords(const FrameBinding&)));
+    connect(this, SIGNAL(CtrlKey(bool)), m_map, SLOT(CtrlKey(bool)));
+    connect(this, SIGNAL(AltKey(bool)), m_map, SLOT(AltKey(bool)));
 
     //setLayout(m_vlayout);
 }
@@ -200,6 +202,7 @@ void MainWidget::NewProject()
 void MainWidget::OpenProject()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open project"), "...", tr("Xml Files (*.xml)"));
+    emit CtrlKey(false);
     if (fileName.isEmpty())
         return;
 
@@ -228,6 +231,7 @@ void MainWidget::OpenProject()
 void MainWidget::SaveProject()
 {
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save current project"), "..."/*QDir::currentPath()*/, tr("Xml Files (*.xml)"));
+    emit CtrlKey(false);
     if (fileName.isEmpty())
         return;
 
@@ -237,7 +241,6 @@ void MainWidget::SaveProject()
         QMessageBox::warning(this, m_applicationName, tr("Cannot write file %1:\n%2.").arg(QDir::toNativeSeparators(fileName), file.errorString()));
         return;
     }
-
     ProjectSettings projectSettings;
     projectSettings.m_zoom = m_map->getZoom();
     auto geoCoords = m_map->getGeoCoords();
@@ -287,6 +290,7 @@ void MainWidget::selectFileClick(bool /*checked*/)
         m_selectedFrame->setText(fileName);
     QString statusMessage = QString::asprintf("File %s is opened %s", fileName.toStdString().c_str(), res ? "" : "with error");
     m_statusBar->showMessage(statusMessage, 10000);
+    emit CtrlKey(false);
 }
 
 ///
@@ -369,4 +373,28 @@ void MainWidget::NewFrameGeoCoords(const FrameBinding& geoCoords)
     }
 
     m_frameMapTable->resizeColumnsToContents();
+}
+
+///
+/// \brief MainWidget::keyPressEvent
+/// \param event
+///
+void MainWidget::keyPressEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Control)
+        emit CtrlKey(true);
+    else if (event->key() == Qt::Key_Alt)
+        emit AltKey(true);
+}
+
+///
+/// \brief MainWidget::keyReleaseEvent
+/// \param event
+///
+void MainWidget::keyReleaseEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Control)
+        emit CtrlKey(false);
+    else if (event->key() == Qt::Key_Alt)
+        emit AltKey(false);
 }
