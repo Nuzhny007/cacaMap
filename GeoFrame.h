@@ -271,14 +271,14 @@ public:
     /// \param tileSize
     /// \return
     ///
-    bool MouseMove(QPoint pt, int zoom, int tileSize, bool movePointOnFrame, bool /*movePointOnMap*/)
+    bool MouseMove(QPoint pt, int zoom, int tileSize, bool movePointOnFrame, bool movePointOnMap)
     {
         QPoint delta = pt - m_mouseAnchor;
         m_mouseAnchor = pt;
 
         if (m_vertexIndex >= 0)
         {
-            //if (movePointOnMap)
+            if (movePointOnMap)
             {
                 longPoint p = myMercator::geoCoordToPixel(m_frameBinding.m_geoPoints.at(m_vertexIndex), zoom, tileSize);
                 p.x += delta.x();
