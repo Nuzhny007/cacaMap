@@ -341,7 +341,7 @@ void MainWidget::updateGeoCoors()
     QPointF geoCoords;
     geoCoords.setY(m_statusLatitudeEdit->text().toDouble());
     geoCoords.setX(m_statusLongitudeEdit->text().toDouble());
-    m_map->setGeoCoords(geoCoords, true);
+    m_map->setGeoCoords(geoCoords, false);
 }
 
 ///
